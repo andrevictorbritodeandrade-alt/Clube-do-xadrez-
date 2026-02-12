@@ -67,13 +67,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setView }) => {
   ];
 
   return (
-    <div className="animate-fade-in space-y-4 md:space-y-8 pb-20">
-      {/* Header section optimized for mobile */}
-      <div className="text-center mb-6 md:mb-10 mt-2">
-        <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tight drop-shadow-md">Painel de Controle</h2>
-        <p className="text-xs md:text-base text-slate-200 font-medium mt-1 drop-shadow-sm">Selecione um módulo para começar</p>
-      </div>
-
+    <div className="animate-fade-in space-y-4 md:space-y-8 pb-20 mt-1 md:mt-2">
+      {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
         {menuCards.map((card) => (
           <div 
@@ -107,7 +102,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setView }) => {
       </div>
 
       {/* Quick Status Bar - More compact */}
-      <div className="mt-8 md:mt-12 glass-panel p-4 md:p-6 rounded-lg md:rounded-xl flex flex-col md:flex-row justify-between items-center text-xs md:text-sm font-bold text-slate-600 space-y-2 md:space-y-0">
+      <div className="mt-4 md:mt-8 glass-panel p-4 md:p-6 rounded-lg md:rounded-xl flex flex-col md:flex-row justify-between items-center text-xs md:text-sm font-bold text-slate-600 space-y-2 md:space-y-0">
         <div className="flex items-center space-x-2">
           <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
           <span>SISTEMA ONLINE</span>
