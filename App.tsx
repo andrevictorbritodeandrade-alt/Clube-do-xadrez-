@@ -10,15 +10,17 @@ import { ClassesView } from './components/ClassesView';
 import { TournamentsView } from './components/TournamentsView';
 import { EmentaView } from './components/EmentaView';
 import { ExercisesView } from './components/ExercisesView';
+import { NotationView } from './components/NotationView';
 import { ActivityPrintModal } from './components/ActivityPrintModal';
 import { WeatherWidget } from './components/WeatherWidget'; // Import Widget
+import { AiAssistant } from './components/AiAssistant'; // Import AI
 import { ViewState, ClassDataMap, ActivityLogData, ClassData } from './types';
 import { initialActivityLogData, mockUserProfile, initialClassData } from './constants';
 import { initFirebase, subscribeToClasses, saveClassesToFirestore } from './services/firebaseService';
 
 // --- Global Footer Component ---
 const GlobalFooter = () => (
-  <footer className="w-full py-4 md:py-6 text-center relative z-50 shrink-0">
+  <footer className="w-full py-4 md:py-6 text-center relative z-50 shrink-0 mt-auto">
     <div className="container mx-auto px-4">
       <h3 className="font-black text-[10px] md:text-sm tracking-widest uppercase mb-1 text-white whitespace-nowrap drop-shadow-md">
         CLUBE DO XADREZ - Gestão das aulas de Xadrez
@@ -121,7 +123,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ data, setData, onBack
     <div className="max-w-4xl mx-auto glass-panel p-4 md:p-8 print:shadow-none animate-fade-in relative pb-20">
       <button 
         onClick={onBack}
-        className="mb-4 flex items-center text-slate-600 hover:text-blue-600 font-bold transition"
+        className="mb-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold transition flex items-center shadow-sm w-fit"
       >
         <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
         Voltar ao Menu
@@ -129,11 +131,11 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ data, setData, onBack
 
       {/* Official Header */}
       <div className="text-center border-b-4 border-slate-900 pb-4 mb-6">
-        <h1 className="font-black text-sm md:text-xl uppercase tracking-wide leading-tight">{header.government}</h1>
+        <h1 className="font-black text-sm md:text-xl uppercase tracking-wide leading-tight text-slate-900">{header.government}</h1>
         <h2 className="font-bold text-xs md:text-lg text-slate-700 leading-tight">{header.city}</h2>
         <h3 className="font-bold text-[10px] md:text-sm text-slate-600 mt-1">{header.department}</h3>
-        <p className="mt-2 text-xs md:text-sm font-medium uppercase">{header.school}</p>
-        <div className="mt-4 flex flex-col md:flex-row justify-between text-xs md:text-sm font-bold border-t-2 border-slate-900 pt-2 gap-1">
+        <p className="mt-2 text-xs md:text-sm font-medium uppercase text-slate-800">{header.school}</p>
+        <div className="mt-4 flex flex-col md:flex-row justify-between text-xs md:text-sm font-bold border-t-2 border-slate-900 pt-2 gap-1 text-slate-900">
           <span className="uppercase">PROF: {header.professor}</span>
           <span className="uppercase">{header.project}</span>
         </div>
@@ -437,6 +439,7 @@ const App: React.FC = () => {
       case 'play': return <ChessGame onBack={goBack} />;
       case 'ementa': return <EmentaView onBack={goBack} />;
       case 'exercises': return <ExercisesView onBack={goBack} />;
+      case 'notation': return <NotationView onBack={goBack} />;
       case 'profile': return <Profile user={mockUserProfile} onBack={goBack} />;
       default: return <DashboardView setView={setView} />;
     }
@@ -455,25 +458,28 @@ const App: React.FC = () => {
       case 'play': return 'Jogar Xadrez';
       case 'ementa': return 'Ementa Escolar';
       case 'exercises': return 'Exercícios Táticos';
+      case 'notation': return 'Notação Algébrica';
       case 'profile': return 'Perfil';
       default: return 'Painel';
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen relative font-sans overflow-hidden">
+    <div className="flex flex-col min-h-screen relative font-sans">
       {/* Global Background */}
       <BackgroundSlider />
       
-      {/* Wrapper for Content + Footer to ensure footer is always at bottom */}
-      <div className="flex-1 flex flex-col z-10 h-full overflow-hidden">
+      {/* Wrapper for Content + Footer */}
+      <div className="flex-1 flex flex-col z-10">
         
         {!isLoggedIn ? (
           // Login View
-          <Login onLogin={handleLogin} />
+          <div className="flex-grow flex flex-col">
+            <Login onLogin={handleLogin} />
+          </div>
         ) : (
           // Logged In App Structure
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col">
              
              {/* Sidebar */}
              <Sidebar 
@@ -485,10 +491,10 @@ const App: React.FC = () => {
              />
 
              {/* Header */}
-             <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 h-14 md:h-16 flex items-center px-4 sticky top-0 z-30 shadow-sm shrink-0 transition-all duration-300">
+             <header className="bg-white/10 backdrop-blur-xl border-b border-white/20 h-14 md:h-16 flex items-center px-4 sticky top-0 z-30 shadow-lg shrink-0 transition-all duration-300 text-white">
                <button 
                  onClick={() => setSidebarOpen(true)}
-                 className="p-1.5 md:p-2 -ml-1 md:-ml-2 mr-2 md:mr-3 rounded-lg hover:bg-slate-100 text-slate-800 focus:outline-none transition-colors"
+                 className="p-1.5 md:p-2 -ml-1 md:-ml-2 mr-2 md:mr-3 rounded-lg hover:bg-white/10 text-white focus:outline-none transition-colors"
                >
                  <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
@@ -500,17 +506,17 @@ const App: React.FC = () => {
                    // Logo no Header (Igual Login)
                    <div className="flex items-center gap-2 -ml-1">
                       <span className="text-2xl md:text-3xl filter drop-shadow-md hover:scale-110 transition-transform cursor-default">♟️</span>
-                      <span className="text-lg md:text-2xl font-black uppercase tracking-wider animate-gradient-text leading-tight">
+                      <span className="text-lg md:text-2xl font-black uppercase tracking-wider animate-gradient-text leading-tight drop-shadow-sm">
                         Clube do Xadrez
                       </span>
                    </div>
                  ) : (
                    // Header padrão para outras views
                    <>
-                     <h1 className="text-[10px] md:text-xs font-black text-blue-600 uppercase tracking-widest hidden md:block">
+                     <h1 className="text-[10px] md:text-xs font-black text-blue-300 uppercase tracking-widest hidden md:block drop-shadow-md">
                        CLUBE DO XADREZ
                      </h1>
-                     <h2 className="text-base md:text-lg font-bold text-slate-800 leading-tight">
+                     <h2 className="text-base md:text-lg font-bold text-white leading-tight drop-shadow-md">
                        {getTitle()}
                      </h2>
                    </>
@@ -523,12 +529,16 @@ const App: React.FC = () => {
                </div>
              </header>
 
-             {/* Main Content Area (Scrollable) */}
-             <main className="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
+             {/* Main Content Area (Naturally Scrollable) */}
+             <main className="flex-1 p-3 md:p-6">
                <div className="max-w-7xl mx-auto pb-6">
                   {renderView()}
                </div>
              </main>
+             
+             {/* AI ASSISTANT (FLOATING) */}
+             <AiAssistant />
+             
           </div>
         )}
       </div>

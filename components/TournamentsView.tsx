@@ -356,8 +356,11 @@ export const TournamentsView: React.FC<{ onBack: () => void }> = ({ onBack }) =>
   if (tData.stage === 'setup') {
     return (
       <div className="animate-fade-in max-w-4xl mx-auto space-y-6">
-        <button onClick={onBack} className="flex items-center text-white/90 hover:text-white font-bold transition">
-          ⬅ Voltar ao Menu
+        <button 
+          onClick={onBack} 
+          className="mb-4 px-5 py-2.5 bg-slate-900/80 backdrop-blur-md rounded-full text-white font-bold transition-all shadow-lg hover:bg-slate-800 flex items-center w-fit active:scale-95 border border-white/10"
+        >
+          <span className="mr-2">⬅</span> Voltar ao Menu
         </button>
         
         <div className="glass-panel p-8 rounded-xl min-h-[500px] flex flex-col">
@@ -553,7 +556,7 @@ export const TournamentsView: React.FC<{ onBack: () => void }> = ({ onBack }) =>
                className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-2xl border-4 border-white/20 hover:scale-105 transition transform flex items-center gap-2 pointer-events-auto"
              >
                <span>Ir para Finais</span>
-               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7m7-7H3" /></svg>
              </button>
           </div>
         )}

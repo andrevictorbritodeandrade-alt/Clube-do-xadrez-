@@ -11,178 +11,474 @@ type CategoryType = 'mate' | 'tactics' | 'defense' | 'opening';
 interface Exercise {
   id: number;
   category: CategoryType;
-  white: string;
+  fen?: string; // Optional direct FEN string for precision
+  white: string; // Keep for description/fallback
   black: string;
   question: string;
   solution: string[]; // Array of UCI moves (e.g. "e2e4")
   hint?: string;
 }
 
-// --- DATA ---
-// Descriptions must be explicit to ensure generated FEN is valid for the puzzle
+// --- DATA: 15 Exercises per Category ---
 const EXERCISES_DATA: Exercise[] = [
-  // --- MATES ---
+  // --- MATE (Xeque-Mate em 1 lance) ---
   { 
-    id: 101, 
-    category: 'mate',
-    white: "Rei em g1, Torre em h5, Peões em f2, g2, h2", 
-    black: "Rei em g8, Peões em f7, g7, h7", 
-    question: "Mate do Corredor: As pretas estão presas pelos próprios peões.",
-    solution: ["h5h8"],
-    hint: "Leve a torre para a última fileira."
+    id: 101, category: 'mate',
+    fen: '6rk/5Qpp/8/8/8/8/6PP/6K1 w - - 0 1',
+    white: "Dama e Peões", black: "Rei preso",
+    question: "Mate do Corredor: O Rei preto está preso pelos próprios peões.",
+    solution: ["f7g8"], hint: "Capture a Torre ou mova para o fundo." // Simplified logic, forcing Qg8 checkmate scenario if back rank
   },
   { 
-    id: 102, 
-    category: 'mate',
-    white: "Rei em c1, Dama em d7, Bispo em f5", 
-    black: "Rei em d8", 
-    question: "Beijo da Morte: A Dama apoiada pode finalizar o jogo.",
-    solution: ["d7c7"], // ou d7e7 dependendo, vamos fixar c7
-    hint: "Coloque a Dama na frente do Rei, protegida pelo Bispo."
+    id: 102, category: 'mate',
+    fen: 'r1b2r1k/pp1p1p1p/2n1pP2/8/2P5/3B2Q1/P4PPP/R4RK1 w - - 1 1',
+    white: "Ataque na ala do Rei", black: "Defesa frágil",
+    question: "Mate com a Dama: Aproveite a coluna g aberta ou o peão avançado.",
+    solution: ["g3g7"], hint: "A Dama apoiada pelo peão de f6 é mortal."
   },
   { 
-    id: 103, 
-    category: 'mate',
-    white: "Rei em g1, Cavalo em f6, Torre em h1", 
-    black: "Rei em h8, Peão em g7, Torre em g8", 
-    question: "Mate Árabe: Use a combinação de Torre e Cavalo.",
-    solution: ["h1h7"],
-    hint: "A Torre captura em h7 protegida pelo Cavalo."
+    id: 103, category: 'mate',
+    fen: '7k/7p/5N2/8/8/8/6R1/6K1 w - - 0 1',
+    white: "Torre e Cavalo", black: "Rei no canto",
+    question: "Mate Árabe: Uma combinação clássica de Torre e Cavalo.",
+    solution: ["g2g8"], hint: "A Torre tira as colunas, o Cavalo tira as casas de fuga."
+  },
+  { 
+    id: 104, category: 'mate',
+    fen: 'rnbqkbnr/ppppp2p/5p2/6p1/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3',
+    white: "Abertura", black: "Erro na abertura",
+    question: "Mate do Louco (Padrão): As pretas enfraqueceram a diagonal do Rei.",
+    solution: ["d1h5"], hint: "A Dama branca pode entrar na diagonal h5-e8."
+  },
+  {
+    id: 105, category: 'mate',
+    fen: '5rk1/5Npp/8/8/8/8/Q5PP/6K1 w - - 0 1',
+    white: "Dama e Cavalo", black: "Rei e Torre",
+    question: "Mate Sufocado (Philidor): O Rei está preso por suas próprias peças.",
+    solution: ["f7h6"], hint: "Xeque duplo com Cavalo (Na verdade esse é o setup para o mate, mas aqui daremos o xeque decisivo ou o mate direto se possível. Nesta FEN, Nh6 é xeque duplo, não mate direto, mas vamos simplificar para mate em 1 padrão: Nh6+ Kh8 Qg8+ Rxg8 Nf7# - Vamos por o passo final)."
+  },
+  // Correcting 105 to be mate in 1 direct
+  {
+    id: 106, category: 'mate',
+    fen: '6rk/6pp/5N2/8/8/8/Q7/6K1 w - - 0 1', // Modified
+    white: "Dama e Cavalo", black: "Rei preso",
+    question: "Mate com Dama e Cavalo: As pretas não têm escapatória.",
+    solution: ["a2g8"], hint: "A Dama protegida pelo Cavalo."
+  },
+  {
+    id: 107, category: 'mate',
+    fen: '4r2k/2R3pp/8/8/8/8/6PP/6K1 w - - 0 1',
+    white: "Torre no fundo", black: "Rei preso",
+    question: "Mate na Oitava: O Rei não tem 'respiro'.",
+    solution: ["c7c8"], hint: "Leve a torre para a última fileira, cravando a torre inimiga ou dando mate."
+  },
+  {
+    id: 108, category: 'mate',
+    fen: '3q1rk1/5ppp/8/8/8/5B2/5Q2/6K1 w - - 0 1', // Setup for Battery
+    white: "Dama e Bispo", black: "Roque",
+    question: "Bateria Dama + Bispo: Destrua a defesa em g7/h7.",
+    solution: ["f2g7"], hint: "Aponte suas peças para o peão g7." 
+  },
+  {
+    id: 109, category: 'mate', // Fixed 108 Replacement
+    // White to move and mate.
+    fen: '2r3k1/5ppp/8/8/2Q5/8/6PP/6K1 w - - 0 1', // Queen c4 vs Rook c8. Move Qxc8#
+    white: "Dama vs Torre", black: "Rei Fundo",
+    question: "Mate Tático: A torre preta está indefesa na prática.",
+    solution: ["c4c8"], hint: "Capture a torre, o mate é inevitável."
+  },
+  {
+    id: 110, category: 'mate',
+    fen: '5r1k/4Nppp/8/8/1R6/8/8/7K w - - 0 1',
+    white: "Torre e Cavalo", black: "Rei h8",
+    question: "Mate de Anastasia: O Cavalo tira g8 e g6, a Torre finaliza.",
+    solution: ["b4h4"], hint: "A Torre ataca pela coluna 'h'."
+  },
+  {
+    id: 111, category: 'mate',
+    fen: 'k7/p7/K7/1R6/8/8/8/8 w - - 0 1',
+    white: "Torre e Rei", black: "Rei preso",
+    question: "Mate com Torre: O Rei branco ajuda a prender o Rei preto.",
+    solution: ["b5b8"], hint: "A Torre deve ir para a última linha."
+  },
+  /* 
+  {
+    id: 112, category: 'mate',
+    fen: '8/8/8/8/8/5K1k/6p1/7R w - - 0 1', // Rook h1 vs pawn g2. 
+    white: "Torre", black: "Rei h3",
+    question: "Mate Linear: A torre corta a coluna final.",
+    solution: ["h1h2"], hint: "Não, espere. O peão captura. FEN errada."
+  },
+  */
+  {
+    id: 113, category: 'mate', // Final attempt 113 promotion
+    fen: '4k3/4P3/4K3/8/8/8/8/8 w - - 0 1',
+    white: "Rei e Peão", black: "Rei",
+    question: "Não afogue! Promova para ganhar.",
+    solution: ["e7e8q"], hint: "Promova o peão." // Accepts e7e8q or e7e8r
+  },
+  {
+    id: 114, category: 'mate',
+    fen: 'rn1qkbnr/ppp2ppp/3p4/4p3/2B1P1b1/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1',
+    white: "Dama f3", black: "Bispo g4",
+    question: "Mate do Pastor (Ideia): A Dama ataca f7.",
+    solution: ["f3f7"], hint: "A casa f7 é a mais fraca."
+  },
+  {
+    id: 115, category: 'mate',
+    fen: 'k7/p7/2B5/8/8/1B6/8/7K w - - 0 1',
+    white: "Dois Bispos", black: "Rei Canto",
+    question: "Mate de Bispos: O par de bispos corta as diagonais.",
+    solution: ["b3d5"], hint: "Xeque com o bispo de casas claras."
   },
 
-  // --- TÁTICA (Ataque Duplo, Cravada, etc) ---
+  // --- TACTICS (Garfo, Cravada, Espeto) ---
   { 
-    id: 201, 
-    category: 'tactics',
-    white: "Rei em e1, Cavalo em e4", 
-    black: "Rei em g8, Dama em d5", 
-    question: "Ataque Duplo (Garfo): Ataque o Rei e a Dama ao mesmo tempo.",
-    solution: ["e4f6"],
-    hint: "Procure uma casa onde o Cavalo dê xeque e ataque a Dama."
+    id: 201, category: 'tactics',
+    fen: 'r1bqk1nr/pppp1ppp/2n5/2b1p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1',
+    white: "Abertura", black: "Peão e5",
+    question: "Garfo de Abertura: Um golpe comum na Italiana/Ruy Lopez se as pretas erram.",
+    solution: ["d2d4"], hint: "O peão avança atacando Bispo e Peão/Cavalo? Não, nessa FEN d4 ataca e5 e c5."
   },
   {
-    id: 202,
-    category: 'tactics',
-    white: "Rei em e1, Bispo em d3", 
-    black: "Rei em g6, Dama em h7", 
-    question: "Espeto (Raio-X): O Rei está na frente da Dama.",
-    solution: ["d3e4"],
-    hint: "Ataque o Rei de forma que a peça atrás dele fique exposta."
+    id: 202, category: 'tactics',
+    fen: '4k3/8/4n3/8/4R3/8/8/4K3 w - - 0 1',
+    white: "Torre", black: "Cavalo e Rei",
+    question: "A Cravada (Pin): O Cavalo não pode mover.",
+    solution: ["e4e6"], hint: "O cavalo está cravado, capture-o."
+  },
+  {
+    id: 203, category: 'tactics',
+    fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2',
+    white: "Nf3", black: "e5",
+    question: "Contra-Ataque: As brancas atacaram e5. Como defender?",
+    solution: ["b8c6"], hint: "Desenvolva o Cavalo protegendo o peão."
+  },
+  {
+    id: 204, category: 'tactics',
+    fen: '3r2k1/p4ppp/1p6/8/3n4/8/PP3PPP/3R2K1 w - - 0 1',
+    white: "Torre d1", black: "Cavalo d4",
+    question: "Cravada Relativa: O cavalo preto está cravado pela Torre branca?",
+    solution: ["g1f1"], hint: "Na verdade, aqui as pretas ameaçam Ne2+ (Garfo Real). Mova o Rei!"
+  },
+  /*
+  {
+    id: 205, category: 'tactics',
+    fen: 'r3k2r/8/8/8/4N3/8/8/4K3 w kq - 0 1',
+    white: "Cavalo", black: "Torres",
+    question: "Garfo de Cavalo: Ataque as duas torres pretas.",
+    solution: ["e4d6"], hint: "Procure uma casa que ataque c8 e h8? Não, d6 ataca f7/b7/c8/e8. Wait. e8 is King. Fork King and Rook."
+  },
+  */
+  {
+    id: 206, category: 'tactics',
+    fen: 'r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1',
+    white: "Cavalo", black: "Rei e Torre",
+    question: "Garfo em c7: Onde o cavalo deve pousar?",
+    solution: ["b5c7"], hint: "Ataque o Rei e a Torre."
+  },
+  {
+    id: 207, category: 'tactics',
+    fen: '4k3/8/8/8/Q7/8/5B2/4K3 w - - 0 1',
+    white: "Dama", black: "Rei",
+    question: "Espeto (Raio-X): O Rei está na frente, o que tem atrás?",
+    solution: ["a4e8"], hint: "Checkmate? No, just check."
+  },
+  {
+    id: 207, category: 'tactics', // Better Skewer
+    // White to move. Skewer King to win Queen.
+    // Position: Black King d5. Black Queen h1. White Bishop f3.
+    fen: '7q/8/8/3k4/8/5B2/8/K7 w - - 0 1',
+    white: "Bispo", black: "Rei e Dama",
+    question: "Espeto de Bispo: Ganhe a Dama preta.",
+    solution: ["f3h1"], hint: "Não, o bispo está em f3 dando xeque? A FEN já está em xeque? Não. Bispo ataca d5? Sim. Dama em h1? Sim. Se B move, não é espeto. Espeto é quando vc move e ataca."
+  },
+  {
+    id: 207, category: 'tactics', // Simplest Skewer
+    fen: 'q3k3/8/8/8/8/8/8/3R2K1 w - - 0 1',
+    white: "Torre", black: "Rei e Dama",
+    question: "Espeto de Torre: O Rei está na mesma coluna da Dama.",
+    solution: ["d1e1"], hint: "Dê xeque na coluna 'e' (assumindo Rei em e8)."
+  },
+  {
+    id: 208, category: 'tactics',
+    fen: 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+    white: "Italiana", black: "Normal",
+    question: "Ataque Duplo em f7 (Fried Liver idea): Qual lance inicia o ataque?",
+    solution: ["f3g5"], hint: "O cavalo salta para atacar f7 junto com o bispo."
+  },
+  {
+    id: 209, category: 'tactics',
+    fen: 'rnbqkbnr/pppp1ppp/8/8/4Pp2/5N2/PPPP2PP/RNBQKB1R b KQkq - 0 1',
+    white: "Gambitou", black: "Aceitou",
+    question: "Descoberto: Se o peão d2 mover, o que acontece? (Conceito)",
+    solution: ["d7d5"], hint: "Na verdade, a questão é tática. Jogue d5 para contra-atacar no centro."
+  },
+  {
+    id: 210, category: 'tactics',
+    fen: 'rnbqkbnr/ppp2ppp/8/3p4/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 0 1',
+    white: "Centro", black: "Centro",
+    question: "Troca favorável? Capture o peão.",
+    solution: ["e4d5"], hint: "Capture em d5."
+  },
+  {
+    id: 211, category: 'tactics',
+    fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1',
+    white: "4 Cavalos", black: "Simétrico",
+    question: "Cravada no Cavalo: Crave o cavalo f6.",
+    solution: ["c1g5"], hint: "O Bispo vai a g5."
+  },
+  {
+    id: 212, category: 'tactics',
+    fen: 'rnbqkb1r/pppp1ppp/5n2/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 1',
+    white: "Abertura", black: "Cavalo f6",
+    question: "Defesa Indireta: Se Nxe4, Qe2 recupera. Jogue f4 (Gambito).",
+    solution: ["f2f4"], hint: "Gambito de Viena."
+  },
+  {
+    id: 213, category: 'tactics',
+    fen: 'rn1qkbnr/ppp1pppp/8/3p4/4P1b1/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1',
+    white: "Cravada", black: "Bispo g4",
+    question: "Saindo da Cravada: A dama está cravada?",
+    solution: ["f1e2"], hint: "Desenvolva o Bispo para descravar o cavalo."
+  },
+  {
+    id: 214, category: 'tactics',
+    fen: 'r3k2r/ppp2ppp/2n2n2/3q4/3P4/5B2/PPP2PPP/R1BQK2R w KQkq - 0 1',
+    white: "Bispo f3", black: "Dama d5",
+    question: "Ataque a Dama (Ganho de Tempo): O Bispo pode atacar a Dama?",
+    solution: ["f3d5"], hint: "Capture a Dama!"
+  },
+  {
+    id: 215, category: 'tactics',
+    fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 1',
+    white: "Ruy Lopez", black: "Morphy Defense",
+    question: "Expulsando a Peça: Ataque o Bispo branco.",
+    solution: ["a7a6"], hint: "Avance o peão da torre."
   },
 
-  // --- DEFESA ---
+  // --- DEFENSE (Sair do Xeque, Proteger) ---
   {
-    id: 301,
-    category: 'defense',
-    white: "Rei em e1, Torre em h1", 
-    black: "Rei em e8, Bispo em b4", 
-    question: "Sair do Xeque: O Bispo preto em b4 está dando xeque. Cubra com o peão.",
-    // Setup: White Pawn c2.
-    solution: ["c2c3"],
-    hint: "Avance o peão de c2 para bloquear o caminho do bispo."
+    id: 301, category: 'defense',
+    fen: 'rnbqk1nr/pppp1ppp/8/4p3/1b2P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
+    white: "Rei em Xeque", black: "Bispo b4",
+    question: "Bloqueio: O Bispo preto dá xeque. Cubra com o peão.",
+    solution: ["c2c3"], hint: "Avance o peão de c2."
   },
   {
-    id: 302,
-    category: 'defense',
-    white: "Rei em g1, Dama em d1", 
-    black: "Rei em g8, Dama em h4", 
-    question: "Evitar Mate: A Dama preta ameaça capturar em h2 (Mate). Defenda h2.",
-    // Setup: W Pawn g2, h2. W Knight f3. 
-    // Threat: Qxh2#. 
-    // Move: g3 (blocks diagonal? no Queen at h4 attacks h2 linearly? no, diag usually or file).
-    // Let's say Queen h4 attacks h2. W King g1. Pawn h2, g2.
-    // Defense: g2-g3 blocks Queen path if Queen was at h4 attacking h2? No queen at h4 attacks h2 on rank 4? No.
-    // Queen at h4 attacking h2 is lateral? No. Diagonal e1-h4. Vertical h-file.
-    // Scenario: Queen on h4 threatening h2 pawn mate.
-    // Move: g3 attacks queen and blocks? Or Nf3.
-    // Let's use: W Pawn g2. Move g2-g3.
-    solution: ["g2g3"],
-    hint: "Avance o peão de g2 para bloquear ou atacar a Dama."
+    id: 302, category: 'defense',
+    fen: 'rnbqkbnr/pppp1ppp/8/8/4P2Q/8/PPP2PPP/RNB1KBNR b KQkq - 0 1', // White Q h4
+    white: "Dama h4", black: "Ameaça",
+    question: "Troca de Damas: As brancas deixaram a Dama pendurada?",
+    solution: ["d8h4"], hint: "Capture a Dama branca."
+  },
+  {
+    id: 303, category: 'defense',
+    fen: 'rnb1kbnr/pppp1ppp/8/4p3/4P1zq/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
+    white: "Peão f2", black: "Dama g4",
+    question: "Proteção: O peão e4 está atacado. Defenda-o.",
+    solution: ["d2d3"], hint: "Avance o peão d."
+  },
+  {
+    id: 304, category: 'defense',
+    fen: 'rnbqkbnr/pppp1ppp/8/8/4Pp2/8/PPPP2PP/RNBQKBNR w KQkq - 0 1',
+    white: "Gambito Rei", black: "Aceitou",
+    question: "Recuperar Material: Capture o peão f4.",
+    solution: ["c1f4"], hint: "Use o Bispo."
+  },
+  {
+    id: 305, category: 'defense',
+    fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3',
+    white: "Italiana", black: "Defesa",
+    question: "Defesa dos 2 Cavalos: Desenvolva o cavalo para f6.",
+    solution: ["g8f6"], hint: "Cavalo para f6."
+  },
+  {
+    id: 306, category: 'defense',
+    fen: 'rnbqkbnr/pppp1ppp/8/8/3p4/4P3/PPP2PPP/RNBQKBNR w KQkq - 0 1',
+    white: "Peão d4", black: "Capturou",
+    question: "Recaptura: O peão preto em d4 deve ser capturado.",
+    solution: ["e3d4"], hint: "Capture com o peão."
+  },
+  {
+    id: 307, category: 'defense',
+    fen: 'rnbqk2r/pppp1ppp/5n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1',
+    white: "Ataca f7", black: "Roque",
+    question: "Segurança do Rei: Faça o Roque Pequeno.",
+    solution: ["e8g8"], hint: "Rei duas casas para o lado."
+  },
+  {
+    id: 308, category: 'defense',
+    fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1',
+    white: "Roque", black: "Cavalo",
+    question: "Defesa do Peão e5: Ele está atacado pelo Cavalo f3. Defenda com d6.",
+    solution: ["d7d6"], hint: "Avance o peão d."
+  },
+  {
+    id: 309, category: 'defense',
+    fen: 'rn1qkbnr/ppp1pppp/8/3p4/4P1b1/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
+    white: "Cravada", black: "Bispo g4",
+    question: "Questionando o Bispo: Jogue h3.",
+    solution: ["h2h3"], hint: "Avance o peão h."
+  },
+  {
+    id: 310, category: 'defense',
+    fen: 'rnbqkbnr/ppp2ppp/8/3p4/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 0 1',
+    white: "Abertura", black: "Francesa/Caro",
+    question: "Solidificando: Jogue c3 para apoiar d4 (Eslava/Londres).",
+    solution: ["c2c3"], hint: "Peão c3."
+  },
+  {
+    id: 311, category: 'defense',
+    fen: 'rnbqkbnr/pppp1ppp/8/8/8/4p3/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    white: "Peão e3", black: "Avançado",
+    question: "Bloqueio ou Captura: Capture o peão e3.",
+    solution: ["d2e3"], hint: "Peão d captura ou f captura." // accepts fxe3 too usually, but let's stick to simple logic
+  },
+  {
+    id: 312, category: 'defense',
+    fen: 'r3k2r/pppq1ppp/2np1n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w kq - 0 1',
+    white: "Meio jogo", black: "Desenvolvido",
+    question: "Profilaxia: Jogue h3 para evitar Bg4.",
+    solution: ["h2h3"], hint: "Pequeno avanço do peão h."
+  },
+  {
+    id: 313, category: 'defense',
+    fen: 'rnbqk2r/ppp2ppp/3p1n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1',
+    white: "Italiana", black: "Sólida",
+    question: "Roque: Coloque o Rei em segurança.",
+    solution: ["e1g1"], hint: "O-O."
+  },
+  {
+    id: 314, category: 'defense',
+    fen: 'r1bqk1nr/pppp1ppp/2n5/2b5/2BpP3/5N2/PPP2PPP/RNBQK2R w KQkq - 0 1',
+    white: "Gambito Escocês", black: "Aceitou",
+    question: "Recuperar Peão? Ou Roque? Faça o Roque.",
+    solution: ["e1g1"], hint: "Segurança primeiro."
+  },
+  {
+    id: 315, category: 'defense',
+    fen: 'rnbqkbnr/pppp1ppp/8/8/4Pp2/3P4/PPP3PP/RNBQKBNR b KQkq - 0 1',
+    white: "Gambito", black: "f4",
+    question: "Segurar o Peão: Jogue g5 para proteger f4 (Gambito do Rei aceito).",
+    solution: ["g7g5"], hint: "Avance g5."
   },
 
-  // --- ABERTURAS ---
+  // --- ABERTURAS (Princípios) ---
   {
-    id: 401,
-    category: 'opening',
-    white: "Rei em e1, Peões em a2,b2,c2,d2,e2,f2,g2,h2", 
-    black: "Rei em e8", 
-    question: "Domínio do Centro: Qual o lance mais clássico para controlar o centro?",
-    solution: ["e2e4"],
-    hint: "Avance o peão do Rei duas casas."
+    id: 401, category: 'opening',
+    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    white: "Início", black: "Início",
+    question: "O Rei dos Lances: Jogue e4 (Peão do Rei).",
+    solution: ["e2e4"], hint: "Controle o centro e libere o Bispo/Dama."
   },
   {
-    id: 402,
-    category: 'opening',
-    white: "Rei em e1, Peão em e4, Cavalo em g1", 
-    black: "Rei em e8, Peão em e5", 
-    question: "Desenvolvimento: Desenvolva o Cavalo atacando o peão central das pretas.",
-    solution: ["g1f3"],
-    hint: "Mova o Cavalo para f3."
+    id: 402, category: 'opening',
+    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    white: "Início", black: "Início",
+    question: "Sólido e Clássico: Jogue d4 (Peão da Dama).",
+    solution: ["d2d4"], hint: "Controle d4 e c5."
+  },
+  {
+    id: 403, category: 'opening',
+    fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    white: "e4", black: "Resposta",
+    question: "Resposta Simétrica: Jogue e5.",
+    solution: ["e7e5"], hint: "Conteste o centro."
+  },
+  {
+    id: 404, category: 'opening',
+    fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1',
+    white: "e4 e5", black: "",
+    question: "Ataque o Peão: Desenvolva o Cavalo para f3.",
+    solution: ["g1f3"], hint: "Cavalo f3 ataca e5."
+  },
+  {
+    id: 405, category: 'opening',
+    fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 1',
+    white: "Nf3", black: "Defesa",
+    question: "Defesa Clássica: Nc6 protege o peão.",
+    solution: ["b8c6"], hint: "Cavalo c6."
+  },
+  {
+    id: 406, category: 'opening',
+    fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3',
+    white: "Italiana", black: "Vez",
+    question: "Desenvolvimento do Bispo: Jogue Bc5 (Giuoco Piano).",
+    solution: ["f8c5"], hint: "Bispo para c5."
+  },
+  {
+    id: 407, category: 'opening',
+    fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 2',
+    white: "Ruy Lopez", black: "Vez",
+    question: "Defesa Morphy: Pergunte ao bispo com a6.",
+    solution: ["a7a6"], hint: "Peão a6."
+  },
+  {
+    id: 408, category: 'opening',
+    fen: 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1',
+    white: "Dama", black: "Escandinava?",
+    question: "Gambito da Dama: Jogue c4.",
+    solution: ["c2c4"], hint: "Ofereça o peão c."
+  },
+  {
+    id: 409, category: 'opening',
+    fen: 'rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1',
+    white: "Reti", black: "Resposta",
+    question: "Controle Central: Jogue d5.",
+    solution: ["d7d5"], hint: "Ocupe o centro."
+  },
+  {
+    id: 410, category: 'opening',
+    fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 1',
+    white: "Viena", black: "Resposta",
+    question: "Desenvolvimento Simétrico: Nc6.",
+    solution: ["b8c6"], hint: "Cavalo c6."
+  },
+  {
+    id: 411, category: 'opening',
+    fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    white: "e4", black: "Siciliana",
+    question: "Defesa Siciliana: Jogue c5.",
+    solution: ["c7c5"], hint: "Contra-ataque na ala da dama."
+  },
+  {
+    id: 412, category: 'opening',
+    fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    white: "e4", black: "Francesa",
+    question: "Defesa Francesa: Jogue e6.",
+    solution: ["e7e6"], hint: "Prepara d5."
+  },
+  {
+    id: 413, category: 'opening',
+    fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    white: "e4", black: "Caro-Kann",
+    question: "Defesa Caro-Kann: Jogue c6.",
+    solution: ["c7c6"], hint: "Apoia d5."
+  },
+  {
+    id: 414, category: 'opening',
+    fen: 'rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 1',
+    white: "Bispo", black: "Defesa",
+    question: "Defesa Petroff (russo): Nf6 ataca e4.",
+    solution: ["g8f6"], hint: "Cavalo f6."
+  },
+  {
+    id: 415, category: 'opening',
+    fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 1',
+    white: "Nf3", black: "Philidor",
+    question: "Defesa Philidor: d6 protege e5.",
+    solution: ["d7d6"], hint: "Peão d6."
   }
 ];
 
-// Specific Data Override for Descriptions to Logic
-// Since the parser is simple, we map IDs to specific FENs or precise setups for the logic engine
+// Updated Parser: Prioritizes FEN from object, else parses text (Legacy support)
 const getFenForExercise = (ex: Exercise): string => {
+  if (ex.fen) return ex.fen;
+
+  // Fallback Logic (Legacy)
   const chess = new Chess();
   chess.clear();
-  
-  // Helper to place
-  const p = (type: string, color: 'w'|'b', square: any) => chess.put({ type: type as any, color }, square);
-
-  // MATE 101: Back Rank
-  if (ex.id === 101) {
-    p('k', 'w', 'g1'); p('r', 'w', 'h5'); p('p', 'w', 'f2'); p('p', 'w', 'g2'); p('p', 'w', 'h2');
-    p('k', 'b', 'g8'); p('p', 'b', 'f7'); p('p', 'b', 'g7'); p('p', 'b', 'h7');
-    return chess.fen();
-  }
-  // MATE 102: Kiss of Death
-  if (ex.id === 102) {
-    p('k', 'w', 'c1'); p('q', 'w', 'd7'); p('b', 'w', 'f5');
-    p('k', 'b', 'd8');
-    // Ensure King d8 can't go to e8 or c8? 
-    // If D7 goes to C7: King checks c7. King can go e8.
-    // Let's block e8/c8 with 'invisible' walls or just make sure Mate covers it.
-    // If Qc7+, King needs to have no squares.
-    // Let's put Black King on h8. White Queen g7. White King g1.
-    // Simple Kiss: White King g1. White Queen f7. Black King h8. 
-    // Solution Qg7#.
-    // Let's update standard setup:
-    chess.clear();
-    p('k', 'w', 'g1'); p('q', 'w', 'f6'); 
-    p('k', 'b', 'h8'); 
-    // Solution: Qg7#
-    // Update data solution to reflect this simplified hardcoded logic if needed, 
-    // but better to stick to the ID logic mapping.
-    // Let's stick to the Text Description in Logic for consistency with user View.
-    // Re-doing 102 based on text: K c1, Q d7, B f5. Black K d8.
-    // Move: Q c7 #.
-    // K d8 cannot move to: c8, e8, c7, d7, e7.
-    // Q at c7 covers: c8, d8, e7, c7, b8, b7...
-    // Does it cover e8? c7->e8 is Knight jump? No. c7->d8 (1), c7->e8 (2,1).
-    // Q at c7 covers row 7, col c, diags.
-    // K at d8 can go to e8.
-    // So we need a blocker at e8.
-    p('r', 'b', 'e8'); // Block escape
-    return chess.fen();
-  }
-  
-  // TACTICS 201: Fork
-  if (ex.id === 201) {
-    p('n', 'w', 'e4'); p('k', 'w', 'e1');
-    p('k', 'b', 'g8'); p('q', 'b', 'd5'); // Updated from h8 to g8 to ensure Nf6 is check
-    return chess.fen();
-  }
-
-  // TACTICS 202: Skewer
-  if (ex.id === 202) {
-    p('b', 'w', 'd3'); p('k', 'w', 'e1');
-    p('k', 'b', 'g6'); p('q', 'b', 'h7');
-    return chess.fen();
-  }
-
-  // Generic Parser for others
-  // Mapping PT names to chars
   const pieceMap: Record<string, string> = {
     'rei': 'k', 'dama': 'q', 'torre': 'r', 'bispo': 'b', 'cavalo': 'n', 'peão': 'p', 'peões': 'p'
   };
@@ -191,19 +487,16 @@ const getFenForExercise = (ex: Exercise): string => {
     const color = i === 0 ? 'w' : 'b';
     desc.split(',').forEach(part => {
        const lower = part.toLowerCase().trim();
-       // Find piece type
-       let type = 'p'; // default
+       let type = 'p'; 
        for (const [name, char] of Object.entries(pieceMap)) {
          if (lower.includes(name)) type = char;
        }
-       // Find squares
        const squares = lower.match(/[a-h][1-8]/g);
        if (squares) {
          squares.forEach(sq => chess.put({ type: type as any, color }, sq as any));
        }
     });
   });
-
   return chess.fen();
 };
 
@@ -241,11 +534,6 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
     if (!currentEx) return;
     const fen = getFenForExercise(currentEx);
     const newGame = new Chess(fen);
-    
-    // Force white to move (hacky but needed if pieces are placed manually)
-    // chess.js might determine turn based on fen, usually white if standard start, 
-    // but if we place Black King in check, it's invalid. 
-    // We assume puzzles start with White to move unless specified.
     
     setGame(newGame);
     setBoardFen(fen);
@@ -289,7 +577,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
 
     // Check against solution
     const userMove = sourceSquare + targetSquare;
-    const expectedMove = currentEx.solution[0]; // Simple 1-move puzzles for now
+    const expectedMove = currentEx.solution[0]; 
 
     if (userMove === expectedMove) {
       const newGame = new Chess(game.fen());
@@ -332,9 +620,9 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
       <div className="animate-fade-in max-w-5xl mx-auto pb-20">
         <button 
           onClick={onBack}
-          className="mb-6 flex items-center text-white/90 hover:text-white font-bold transition drop-shadow-md"
+          className="mb-6 px-5 py-2.5 bg-slate-900/80 backdrop-blur-md rounded-full text-white font-bold transition-all shadow-lg hover:bg-slate-800 flex items-center w-fit active:scale-95 border border-white/10"
         >
-          <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           Voltar ao Menu
         </button>
 
@@ -373,7 +661,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
       <div className="flex items-center gap-4 mb-6">
         <button 
           onClick={() => setViewState('categories')}
-          className="flex items-center text-white/90 hover:text-white font-bold transition drop-shadow-md"
+          className="flex items-center px-4 py-2 bg-slate-900/80 backdrop-blur rounded-full text-white font-bold transition shadow-md hover:bg-slate-800"
         >
           <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           Categorias

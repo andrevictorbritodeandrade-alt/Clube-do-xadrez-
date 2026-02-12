@@ -88,7 +88,7 @@ export const WeatherWidget: React.FC = () => {
   return (
     <div className="flex flex-col items-end justify-center leading-none select-none">
       {/* Date Row */}
-      <div className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+      <div className="text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 drop-shadow-sm">
         {formattedDay}, {dateStr}
       </div>
 
@@ -98,17 +98,17 @@ export const WeatherWidget: React.FC = () => {
       ) : error ? (
         <div className="text-[10px] text-red-400 font-bold">{error}</div>
       ) : weather ? (
-        <div className="flex items-center bg-slate-100 rounded-full px-2 py-0.5 border border-slate-200">
-           <span className="text-base mr-1">{getWeatherIcon(weather.code)}</span>
-           <span className="text-sm font-black text-slate-800 mr-2">{weather.temp}°</span>
+        <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full px-3 py-1 border border-white/20 shadow-sm">
+           <span className="text-base mr-2 filter drop-shadow-sm">{getWeatherIcon(weather.code)}</span>
+           <span className="text-sm font-black text-white mr-3 drop-shadow-md">{weather.temp}°</span>
            
-           <div className="h-3 w-px bg-slate-300 mx-1"></div>
+           <div className="h-3 w-px bg-white/20 mx-1"></div>
            
-           <div className="flex items-center gap-1.5 text-[9px] md:text-[10px] font-bold text-slate-600">
-              <span className="flex items-center" title="Máxima"><span className="text-red-500 mr-px">↑</span>{weather.max}°</span>
-              <span className="flex items-center" title="Mínima"><span className="text-blue-500 mr-px">↓</span>{weather.min}°</span>
+           <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-bold text-slate-200">
+              <span className="flex items-center" title="Máxima"><span className="text-red-400 mr-px">↑</span>{weather.max}°</span>
+              <span className="flex items-center" title="Mínima"><span className="text-blue-400 mr-px">↓</span>{weather.min}°</span>
               {weather.rainProb > 0 && (
-                <span className="flex items-center text-blue-600 ml-0.5" title="Chuva">
+                <span className="flex items-center text-blue-300 ml-0.5" title="Chuva">
                    ☔ {weather.rainProb}%
                 </span>
               )}

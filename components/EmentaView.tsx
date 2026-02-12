@@ -1,22 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { EmentaPrintModal } from './EmentaPrintModal';
 
 interface EmentaViewProps {
   onBack: () => void;
 }
 
 export const EmentaView: React.FC<EmentaViewProps> = ({ onBack }) => {
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
   return (
+    <>
     <div className="animate-fade-in max-w-5xl mx-auto pb-20">
-      <button 
-        onClick={onBack}
-        className="mb-6 flex items-center text-white/90 hover:text-white font-bold transition drop-shadow-md"
-      >
-        <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-        Voltar ao Menu
-      </button>
+      <div className="flex justify-between items-center mb-6">
+        <button 
+          onClick={onBack}
+          className="px-5 py-2.5 bg-slate-900/80 backdrop-blur-md rounded-full text-white font-bold transition-all shadow-lg hover:bg-slate-800 flex items-center w-fit active:scale-95 border border-white/10"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          Voltar
+        </button>
+
+        <button 
+          onClick={() => setShowPrintModal(true)}
+          className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition flex items-center"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+          Imprimir Ementa
+        </button>
+      </div>
 
       {/* Document Container */}
-      <div className="bg-white rounded-xl shadow-2xl overflow-hidden print:shadow-none">
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
         
         {/* Official Header */}
         <div className="bg-slate-50 border-b-4 border-blue-900 p-6 md:p-8 text-center space-y-2">
@@ -25,7 +39,7 @@ export const EmentaView: React.FC<EmentaViewProps> = ({ onBack }) => {
           </div>
           <h1 className="font-black text-slate-900 uppercase text-lg md:text-xl tracking-wider leading-tight">Governo do Estado do Rio de Janeiro</h1>
           <h2 className="font-bold text-slate-800 uppercase text-base md:text-lg tracking-wide">Prefeitura Municipal de Maricá</h2>
-          <h3 className="font-bold text-slate-700 uppercase text-sm md:text-base">Secretaria Municipal de Educação</h3>
+          <h3 className="font-bold text-slate-700 uppercase text-sm md:text-base">Secretaria de Municipal de Educação</h3>
           <h3 className="font-bold text-slate-900 uppercase text-sm md:text-base mt-1">Escola Municipal Joana Benedicta Rangel</h3>
           
           <div className="flex flex-wrap justify-center gap-2 mt-4">
@@ -39,8 +53,8 @@ export const EmentaView: React.FC<EmentaViewProps> = ({ onBack }) => {
         </div>
 
         {/* Title Section */}
-        <div className="p-8 text-center bg-white border-b border-slate-100">
-           <h2 className="text-2xl md:text-4xl font-black text-slate-800 uppercase mb-2 text-balance">
+        <div className="p-6 md:p-8 text-center bg-white border-b border-slate-100">
+           <h2 className="text-2xl md:text-3xl font-black text-slate-800 uppercase mb-2 text-balance">
              Projeto de Iniciação ao Xadrez
            </h2>
            <p className="text-lg font-medium text-slate-500 uppercase tracking-widest">
@@ -48,7 +62,7 @@ export const EmentaView: React.FC<EmentaViewProps> = ({ onBack }) => {
            </p>
         </div>
 
-        {/* Info Grid */}
+        {/* Info Grid - Responsive Stack */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-slate-200 border-b border-slate-200">
           <div className="bg-white p-6">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nome do Curso</h4>
@@ -71,195 +85,136 @@ export const EmentaView: React.FC<EmentaViewProps> = ({ onBack }) => {
         </div>
 
         {/* Content Body */}
-        <div className="p-6 md:p-12 space-y-12">
+        <div className="p-4 md:p-12 space-y-10">
           
           {/* MÓDULO 1 */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xl">1</div>
-              <h3 className="text-2xl font-black text-blue-900 uppercase">Fundamentos do Xadrez</h3>
+            <div className="flex items-center gap-3 mb-4 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600">
+              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">1</div>
+              <h3 className="text-lg md:text-2xl font-black text-blue-900 uppercase">Fundamentos do Xadrez</h3>
             </div>
             
-            <div className="space-y-6 pl-4 md:pl-12 border-l-2 border-slate-100">
-              {/* Topic 1 */}
-              <div className="group">
-                <h4 className="font-bold text-slate-800 text-lg mb-2">1. Movimentos e Capturas</h4>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                  <p className="text-slate-700 text-sm mb-2"><strong className="text-blue-700">1.0 Peão, Torre e Cavalo:</strong> Ensinar através do método global e atividades práticas (mini-partidas).</p>
-                  <p className="text-slate-700 text-sm"><strong className="text-blue-700">1.1 Bispo, Rei e Rainha:</strong> Ensinar movimentos e passar a montar o tabuleiro completo.</p>
+            {/* Lista responsiva sem tabela fixa */}
+            <div className="bg-white rounded-xl border border-slate-200">
+                <div className="divide-y divide-slate-100">
+                    {[
+                        "Movimentos e Capturas – Conhecendo as peças e como elas se movem.",
+                        "Lances Especiais – Roque, en passant e promoção.",
+                        "Xeque e Xeque-Mate – Como identificar e finalizar uma partida.",
+                        "Rei Afogado – Compreensão de situações de empate.",
+                        "Notação Algébrica 1 – Introdução à anotação de partidas.",
+                        "Notação Algébrica 2 – Exercícios práticos e leitura de partidas.",
+                        "Empates e Regras Práticas – Diferentes formas de empate no xadrez.",
+                        "Ataque e Defesa – Princípios básicos da estratégia."
+                    ].map((item, idx) => (
+                        <div key={idx} className="p-3 md:p-4 hover:bg-slate-50 transition-colors flex gap-3 items-start">
+                            <span className="font-bold text-blue-600 min-w-[24px] text-center mt-0.5">{idx + 1}.</span>
+                            <span className="text-slate-700 font-medium text-sm md:text-base leading-relaxed break-words">{item}</span>
+                        </div>
+                    ))}
                 </div>
-              </div>
-
-              {/* Topic 2 */}
-              <div className="group">
-                <h4 className="font-bold text-slate-800 text-lg mb-2">2. Lances Especiais</h4>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 space-y-3">
-                  <p className="text-slate-700 text-sm"><strong className="text-blue-700">Roque (Pequeno e Grande):</strong> Regras de segurança do Rei, linha de ataque e peças não tocadas.</p>
-                  <p className="text-slate-700 text-sm"><strong className="text-blue-700">En Passant:</strong> Captura especial quando o peão avança duas casas para "fugir" da captura.</p>
-                  <p className="text-slate-700 text-sm"><strong className="text-blue-700">Promoção:</strong> Quando o peão chega ao outro lado e se torna Rainha, Torre, Bispo ou Cavalo.</p>
-                </div>
-              </div>
-
-              {/* Topic 3 */}
-              <div className="group">
-                <h4 className="font-bold text-slate-800 text-lg mb-2">3. Xeque e Xeque-Mate</h4>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                  <p className="text-slate-700 text-sm mb-2">Identificação de ataque ao Rei (Xeque) e finalização sem saída (Mate).</p>
-                  <p className="text-slate-600 text-xs italic">Prática intensiva: Exercícios de ataque e defesa por duas aulas.</p>
-                </div>
-              </div>
-
-               {/* Topic 4 */}
-               <div className="group">
-                <h4 className="font-bold text-slate-800 text-lg mb-2">4. Rei Afogado</h4>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                  <p className="text-slate-700 text-sm">Compreensão de situações de empate onde o Rei não está em xeque mas não tem movimentos legais.</p>
-                </div>
-              </div>
-
-              {/* Topic 5 - Notação */}
-              <div className="group">
-                <h4 className="font-bold text-slate-800 text-lg mb-2">5. Notação Algébrica</h4>
-                <div className="bg-slate-800 text-slate-200 p-5 rounded-xl space-y-4 text-sm font-mono">
-                  <p>Sistema universal para registrar partidas, comunicar jogadas e estudar xadrez.</p>
-                  <div className="grid grid-cols-2 gap-4 border-t border-slate-700 pt-3">
-                    <div>
-                      <span className="block text-blue-400 font-bold mb-1">Peças:</span>
-                      <ul className="space-y-1 text-xs">
-                        <li>R - Rei (King)</li>
-                        <li>D - Dama (Queen)</li>
-                        <li>T - Torre (Rook)</li>
-                        <li>B - Bispo (Bishop)</li>
-                        <li>C - Cavalo (Knight)</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <span className="block text-green-400 font-bold mb-1">Exemplos:</span>
-                      <ul className="space-y-1 text-xs">
-                        <li>e4 (Peão move)</li>
-                        <li>Cf3 (Cavalo move)</li>
-                        <li>Dxf3 (Captura)</li>
-                        <li>+ (Xeque) / # (Mate)</li>
-                        <li>0-0 (Roque Curto)</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Topic 6 */}
-              <div className="group">
-                <h4 className="font-bold text-slate-800 text-lg mb-2">6. Empates e Regras Práticas</h4>
-                <ul className="list-disc list-inside text-sm text-slate-700 space-y-1 ml-2">
-                   <li>Rei vs Rei (Material insuficiente).</li>
-                   <li>Regra das 50 jogadas sem captura ou movimento de peão.</li>
-                   <li>Repetição de posição (3 vezes) e Xeque Perpétuo.</li>
-                </ul>
-              </div>
-
-               {/* Topic 7 */}
-               <div className="group">
-                <h4 className="font-bold text-slate-800 text-lg mb-2">7. Ataque e Defesa</h4>
-                <p className="text-sm text-slate-700">Princípios básicos com tabuleiro aberto para visualização de possibilidades.</p>
-              </div>
-
             </div>
           </section>
 
           {/* MÓDULO 2 */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black text-xl">2</div>
-              <h3 className="text-2xl font-black text-purple-900 uppercase">Finais e Estratégias Básicas</h3>
+            <div className="flex items-center gap-3 mb-4 bg-purple-50 p-4 rounded-lg border-l-4 border-purple-600">
+              <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">2</div>
+              <h3 className="text-lg md:text-2xl font-black text-purple-900 uppercase">Finais e Estratégias</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 md:pl-12">
-               {[
-                 { title: "Mates Elementares", desc: "Mate da escadinha (2 Torres ou Torre e Dama)." },
-                 { title: "Iniciação", desc: "Conceitos de abertura e controle do centro." },
-                 { title: "Mate de Dama", desc: "Técnica de encurralar o Rei sem afogá-lo." },
-                 { title: "Mate de Torre", desc: "Técnica de finalização com Rei e Torre." },
-                 { title: "Esquemas de Mate", desc: "Padrões comuns (Corredor, Peças presas)." },
-                 { title: "Par de Bispos", desc: "Técnicas específicas de finalização." },
-               ].map((item, i) => (
-                 <div key={i} className="bg-purple-50 p-4 rounded-lg border border-purple-100 hover:shadow-md transition">
-                    <h5 className="font-bold text-purple-800 mb-1">{item.title}</h5>
-                    <p className="text-sm text-slate-600">{item.desc}</p>
-                 </div>
-               ))}
+            <div className="bg-white rounded-xl border border-slate-200">
+                <div className="divide-y divide-slate-100">
+                    {[
+                        "Mates Elementares – Escadinha e outros mates simples.",
+                        "Como Iniciar uma Partida – Conceitos básicos de abertura.",
+                        "Mate de Dama – Finalizações eficientes.",
+                        "Esquemas de Mate - Parte 1 (Dama) – Padrões comuns.",
+                        "Mate de Torre – Técnica de finalização.",
+                        "Esquemas de Mate - Parte 2 – Práticas avançadas.",
+                        "Mate com Par de Bispos – Técnicas específicas.",
+                        "Esquemas de Mate - Parte 3 – Estudo aprofundado."
+                    ].map((item, idx) => (
+                        <div key={idx} className="p-3 md:p-4 hover:bg-slate-50 transition-colors flex gap-3 items-start">
+                            <span className="font-bold text-purple-600 min-w-[24px] text-center mt-0.5">{idx + 1}.</span>
+                            <span className="text-slate-700 font-medium text-sm md:text-base leading-relaxed break-words">{item}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
           </section>
 
           {/* MÓDULO 3 */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-black text-xl">3</div>
-              <h3 className="text-2xl font-black text-orange-900 uppercase">Estratégias e Táticas</h3>
+            <div className="flex items-center gap-3 mb-4 bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
+              <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">3</div>
+              <h3 className="text-lg md:text-2xl font-black text-orange-900 uppercase">Estratégias e Táticas</h3>
             </div>
             
-            <div className="pl-4 md:pl-12 space-y-4">
-               <div className="flex items-start gap-4 p-4 border rounded-xl bg-orange-50/50 border-orange-100">
-                  <div className="text-2xl">💎</div>
-                  <div>
-                    <h4 className="font-bold text-slate-800">Vantagem Material</h4>
-                    <p className="text-sm text-slate-600">Estratégias para capturar peças com segurança e valorizar trocas.</p>
-                  </div>
-               </div>
-               <div className="flex items-start gap-4 p-4 border rounded-xl bg-orange-50/50 border-orange-100">
-                  <div className="text-2xl">⚔️</div>
-                  <div>
-                    <h4 className="font-bold text-slate-800">Ataque Duplo (Garfo)</h4>
-                    <p className="text-sm text-slate-600">Quando uma peça ataca duas ou mais peças adversárias simultaneamente.</p>
-                  </div>
-               </div>
-               <div className="flex items-start gap-4 p-4 border rounded-xl bg-orange-50/50 border-orange-100">
-                  <div className="text-2xl">📌</div>
-                  <div>
-                    <h4 className="font-bold text-slate-800">A Cravada</h4>
-                    <p className="text-sm text-slate-600">Impedir o movimento de uma peça adversária pois exporia uma peça de maior valor (como o Rei).</p>
-                  </div>
-               </div>
+            <div className="bg-white rounded-xl border border-slate-200">
+                <div className="divide-y divide-slate-100">
+                    {[
+                        "Como Conseguir Vantagem Material – Estratégias para capturar peças com segurança.",
+                        "Ataque Duplo e Cravada – Importância da tática no jogo.",
+                        "A Cravada – Estudo detalhado e aplicações práticas."
+                    ].map((item, idx) => (
+                        <div key={idx} className="p-3 md:p-4 hover:bg-slate-50 transition-colors flex gap-3 items-start">
+                            <span className="font-bold text-orange-600 min-w-[24px] text-center mt-0.5">{idx + 1}.</span>
+                            <span className="text-slate-700 font-medium text-sm md:text-base leading-relaxed break-words">{item}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
           </section>
 
-          {/* Methodology & Resources */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-slate-200">
-             
-             <div className="space-y-4">
-                <h4 className="font-black text-slate-800 uppercase border-b-2 border-blue-500 inline-block pb-1">Metodologia</h4>
-                <ul className="text-sm text-slate-700 space-y-2">
-                  <li>• Aulas Expositivas e Demonstrações.</li>
-                  <li>• Exercícios em Tabuleiro Físico e Digital.</li>
-                  <li>• Análise de Partidas Históricas.</li>
-                  <li>• Partidas entre alunos com Feedback.</li>
-                </ul>
-             </div>
+          {/* DETALHES GERAIS (Substituindo Tabela por Lista Flexível) */}
+          <section className="pt-2">
+             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                 
+                 {/* Metodologia */}
+                 <div className="flex flex-col md:flex-row border-b border-slate-100">
+                    <div className="p-4 bg-blue-50/50 md:w-1/4 border-b md:border-b-0 md:border-r border-slate-100">
+                        <h4 className="font-bold uppercase text-blue-900 text-sm">Metodologia</h4>
+                    </div>
+                    <div className="p-4 md:w-3/4 space-y-2">
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Aulas Expositivas:</span> <span className="text-slate-700">Demonstração prática.</span></div>
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Exercícios Práticos:</span> <span className="text-slate-700">Tabuleiro físico e digital.</span></div>
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Análise de Partidas:</span> <span className="text-slate-700">Estudo de partidas históricas.</span></div>
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Partidas Entre Alunos:</span> <span className="text-slate-700">Feedback individual.</span></div>
+                    </div>
+                 </div>
 
-             <div className="space-y-4">
-                <h4 className="font-black text-slate-800 uppercase border-b-2 border-green-500 inline-block pb-1">Avaliação</h4>
-                <ul className="text-sm text-slate-700 space-y-2">
-                  <li>• Participação Ativa.</li>
-                  <li>• Registro correto (Notação).</li>
-                  <li>• Aplicação de conceitos táticos.</li>
-                  <li>• Desempenho em partidas simuladas.</li>
-                </ul>
-             </div>
+                 {/* Avaliação */}
+                 <div className="flex flex-col md:flex-row border-b border-slate-100">
+                    <div className="p-4 bg-purple-50/50 md:w-1/4 border-b md:border-b-0 md:border-r border-slate-100">
+                        <h4 className="font-bold uppercase text-purple-900 text-sm">Avaliação</h4>
+                    </div>
+                    <div className="p-4 md:w-3/4 space-y-2">
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Participação Ativa:</span> <span className="text-slate-700">Envolvimento nas aulas.</span></div>
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Registro de Partidas:</span> <span className="text-slate-700">Uso correto da notação.</span></div>
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Aplicação de Conceitos:</span> <span className="text-slate-700">Abertura, meio-jogo e final.</span></div>
+                    </div>
+                 </div>
 
-             <div className="space-y-4">
-                <h4 className="font-black text-slate-800 uppercase border-b-2 border-purple-500 inline-block pb-1">Recursos</h4>
-                <ul className="text-sm text-slate-700 space-y-2">
-                  <li>• Tabuleiros e Peças Físicas.</li>
-                  <li>• Softwares e Apps de Xadrez.</li>
-                  <li>• Material Impresso e Digital.</li>
-                  <li>• Vídeos de Partidas Comentadas.</li>
-                </ul>
-             </div>
+                 {/* Recursos */}
+                 <div className="flex flex-col md:flex-row">
+                    <div className="p-4 bg-orange-50/50 md:w-1/4 border-b md:border-b-0 md:border-r border-slate-100">
+                        <h4 className="font-bold uppercase text-orange-900 text-sm">Recursos Didáticos</h4>
+                    </div>
+                    <div className="p-4 md:w-3/4 space-y-2">
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Materiais:</span> <span className="text-slate-700">Tabuleiros, Peças, Relógios.</span></div>
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Digital:</span> <span className="text-slate-700">Softwares de análise, Projetor.</span></div>
+                       <div className="block md:flex md:gap-2"><span className="font-bold text-slate-900">Conteúdo:</span> <span className="text-slate-700">Apostilas e Vídeos.</span></div>
+                    </div>
+                 </div>
 
-          </div>
+             </div>
+          </section>
 
           {/* Footer Note */}
           <div className="bg-slate-50 p-6 rounded-xl text-center border border-slate-200 mt-8">
-            <p className="text-slate-600 font-medium italic">
+            <h4 className="font-black text-slate-400 uppercase text-xs tracking-widest mb-2">Considerações Finais</h4>
+            <p className="text-slate-600 font-medium italic text-sm md:text-base leading-relaxed">
               "Este curso visa não apenas ensinar as regras do xadrez, mas também desenvolver o pensamento estratégico dos alunos, tornando-os capazes de analisar partidas, criar planos e evoluir no jogo de forma consistente."
             </p>
           </div>
@@ -267,5 +222,12 @@ export const EmentaView: React.FC<EmentaViewProps> = ({ onBack }) => {
         </div>
       </div>
     </div>
+
+    {/* Print Modal */}
+    <EmentaPrintModal 
+      isOpen={showPrintModal} 
+      onClose={() => setShowPrintModal(false)} 
+    />
+    </>
   );
 };

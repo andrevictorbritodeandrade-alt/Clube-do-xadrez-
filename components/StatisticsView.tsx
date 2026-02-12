@@ -81,9 +81,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
         <div className="flex items-center space-x-4 mb-4">
           <button 
             onClick={() => setViewMode('class_select')}
-            className="px-4 py-2 bg-white rounded-lg shadow-sm hover:bg-slate-100 text-sm font-bold text-slate-700 transition"
+            className="px-4 py-2 bg-slate-900/80 text-white rounded-full shadow-lg hover:bg-slate-800 text-sm font-bold transition flex items-center"
           >
-            ⬅ Voltar
+            <span className="mr-2">⬅</span> Voltar
           </button>
           <div>
             <h2 className="text-xl font-black text-white uppercase drop-shadow-md">Histórico: {currentClass.name}</h2>
@@ -151,9 +151,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
         <div className="flex items-center space-x-4 mb-6">
           <button 
             onClick={() => setViewMode('grade_select')}
-            className="p-2 bg-white rounded-full shadow-sm hover:bg-slate-100 transition"
+            className="px-4 py-2 bg-slate-900/80 text-white rounded-full shadow-lg hover:bg-slate-800 text-sm font-bold transition flex items-center"
           >
-            ⬅ Voltar
+            <span className="mr-2">⬅</span> Voltar
           </button>
           <h2 className="text-2xl font-black text-white uppercase tracking-tight drop-shadow-md">Histórico {selectedGrade}º Ano</h2>
         </div>
@@ -181,9 +181,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
          <div className="flex items-center space-x-4 mb-6">
           <button 
             onClick={() => setViewMode('dashboard')}
-            className="p-2 bg-white rounded-full shadow-sm hover:bg-slate-100 transition"
+            className="px-4 py-2 bg-slate-900/80 text-white rounded-full shadow-lg hover:bg-slate-800 text-sm font-bold transition flex items-center"
           >
-            ⬅ Voltar
+            <span className="mr-2">⬅</span> Voltar
           </button>
           <h2 className="text-2xl font-black text-white uppercase tracking-tight drop-shadow-md">Selecione o Nível</h2>
         </div>
@@ -212,9 +212,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
     <div className="space-y-8 animate-fade-in">
        <button 
         onClick={onBack}
-        className="mb-4 flex items-center text-white/90 hover:text-white font-bold transition drop-shadow-md"
+        className="mb-4 px-5 py-2.5 bg-slate-900/80 backdrop-blur-md rounded-full text-white font-bold transition-all shadow-lg hover:bg-slate-800 flex items-center w-fit active:scale-95 border border-white/10"
       >
-        <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
         Voltar ao Menu
       </button>
 

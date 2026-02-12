@@ -1,3 +1,4 @@
+
 export interface Student {
   id: number;
   name: string;
@@ -101,7 +102,7 @@ export interface FirebaseConfig {
   measurementId?: string;
 }
 
-export type ViewState = 'home' | 'statistics' | 'classes' | 'tournaments' | 'activities' | 'play' | 'profile' | 'ementa' | 'exercises';
+export type ViewState = 'home' | 'statistics' | 'classes' | 'tournaments' | 'activities' | 'play' | 'profile' | 'ementa' | 'exercises' | 'notation';
 
 // --- TOURNAMENT TYPES ---
 export interface Player {

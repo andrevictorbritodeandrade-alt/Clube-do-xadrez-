@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserProfile } from '../types';
 
 interface ProfileProps {
@@ -11,9 +11,9 @@ export const Profile: React.FC<ProfileProps> = ({ user, onBack }) => {
     <div className="space-y-8 animate-fade-in">
        <button 
         onClick={onBack}
-        className="mb-4 flex items-center text-white/90 hover:text-white font-bold transition drop-shadow-md"
+        className="mb-4 px-5 py-2.5 bg-slate-900/80 backdrop-blur-md rounded-full text-white font-bold transition-all shadow-lg hover:bg-slate-800 flex items-center w-fit active:scale-95 border border-white/10"
       >
-        <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
         Voltar ao Menu
       </button>
 
