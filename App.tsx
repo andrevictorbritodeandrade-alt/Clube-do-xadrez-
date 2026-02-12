@@ -13,7 +13,6 @@ import { ExercisesView } from './components/ExercisesView';
 import { NotationView } from './components/NotationView';
 import { ActivityPrintModal } from './components/ActivityPrintModal';
 import { WeatherWidget } from './components/WeatherWidget'; // Import Widget
-import { AiAssistant } from './components/AiAssistant'; // Import AI
 import { ViewState, ClassDataMap, ActivityLogData, ClassData } from './types';
 import { initialActivityLogData, mockUserProfile, initialClassData } from './constants';
 import { initFirebase, subscribeToClasses, saveClassesToFirestore } from './services/firebaseService';
@@ -535,9 +534,6 @@ const App: React.FC = () => {
                   {renderView()}
                </div>
              </main>
-             
-             {/* AI ASSISTANT (FLOATING) */}
-             <AiAssistant />
              
           </div>
         )}

@@ -55,23 +55,27 @@ export const AiAssistant: React.FC = () => {
       `;
 
       // Construct history for context
-      // Note: In a real heavy app we might limit history token count.
-      // For this implementation, we send the last few messages for context.
-      const chatHistory = messages.map(m => ({
-         role: m.role,
-         parts: [{ text: m.text }]
-      }));
+      // Filter out the 'welcome' message from API history as it's not a real conversation turn
+      // and starting with 'model' can sometimes cause issues if strict validation is present.
+      const chatHistory = messages
+        .filter(m => m.id !== 'welcome')
+        .map(m => ({
+           role: m.role,
+           parts: [{ text: m.text }]
+        }));
 
-      const model = ai.models;
-      const response = await model.generateContent({
-        model: 'gemini-2.5-flash-latest', // Fast and capable model
+      // Current interaction
+      const currentInteraction = { role: 'user', parts: [{ text: userMsg.text }] };
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview', 
         contents: [
             ...chatHistory,
-            { role: 'user', parts: [{ text: userMsg.text }] }
+            currentInteraction
         ],
         config: {
             systemInstruction: systemInstruction,
-            temperature: 0.7, // Creative but focused
+            temperature: 0.7, 
         }
       });
 
@@ -90,7 +94,7 @@ export const AiAssistant: React.FC = () => {
       const errorMsg: Message = { 
         id: (Date.now() + 1).toString(), 
         role: 'model', 
-        text: "⚠️ Erro de conexão com o Grande Mestre (API Key inválida ou erro de rede). Verifique a configuração." 
+        text: "⚠️ Erro de conexão com o Grande Mestre. Tente novamente em instantes." 
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
