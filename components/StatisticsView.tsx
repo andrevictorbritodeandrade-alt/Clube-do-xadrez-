@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { subscribeToDashboard, updateCardValue, seedDatabase } from '../services/firebaseService';
+import React, { useEffect, useState, useMemo } from 'react';
+import { subscribeToDashboard, seedDatabase } from '../services/firebaseService';
 import { DashboardCardData, ClassDataMap, ClassData } from '../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
@@ -16,6 +16,18 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
   const [viewMode, setViewMode] = useState<'dashboard' | 'grade_select' | 'class_select' | 'details'>('dashboard');
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+
+  // --- CÁLCULOS DINÂMICOS (Correção do Total de Alunos) ---
+  const realStats = useMemo(() => {
+    if (!classData) return { students: 0, classes: 0 };
+    
+    // Safety check to ensure we have an object before getting values
+    const classes = Object.values(classData || {}) as ClassData[];
+    const totalClasses = classes.length;
+    const totalStudents = classes.reduce((acc, cls) => acc + (cls.students ? cls.students.length : 0), 0);
+
+    return { students: totalStudents, classes: totalClasses };
+  }, [classData]);
 
   useEffect(() => {
     seedDatabase();
@@ -39,11 +51,13 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
   // Helper to get all unique dates for a specific class
   const getUniqueDates = (cls: ClassData) => {
     const dates = new Set<string>();
-    cls.students.forEach(s => {
-      Object.keys(s.attendance).forEach(d => dates.add(d));
-    });
-    // Sort dates (assuming DD/MM format, simple string sort might fail for crossing years, but works for simple demo)
-    // A better way is to parse, but let's stick to simple sort for now or just chronological if input is sequential
+    if(cls.students) {
+      cls.students.forEach(s => {
+        if(s.attendance) {
+          Object.keys(s.attendance).forEach(d => dates.add(d));
+        }
+      });
+    }
     return Array.from(dates).sort((a,b) => {
        const [d1, m1] = a.split('/').map(Number);
        const [d2, m2] = b.split('/').map(Number);
@@ -56,9 +70,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
   // 1. DETAIL VIEW (The Historical Matrix)
   if (viewMode === 'details' && selectedClassId && classData) {
     const currentClass = classData[selectedClassId];
+    if (!currentClass) return <div>Erro ao carregar turma</div>;
+    
     const dates = getUniqueDates(currentClass);
     // Sort students alphabetically
-    const sortedStudents = [...currentClass.students].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedStudents = currentClass.students ? [...currentClass.students].sort((a, b) => a.name.localeCompare(b.name)) : [];
 
     return (
       <div className="space-y-4 animate-fade-in">
@@ -90,7 +106,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
               <tbody className="divide-y divide-slate-100 bg-white">
                 {sortedStudents.map((student) => {
                   const totalDays = dates.length;
-                  const presents = Object.values(student.attendance).filter(v => v === 'P').length;
+                  const presents = student.attendance ? Object.values(student.attendance).filter(v => v === 'P').length : 0;
                   const percentage = totalDays ? Math.round((presents / totalDays) * 100) : 0;
                   
                   return (
@@ -99,7 +115,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                         {student.name}
                       </td>
                       {dates.map(date => {
-                        const status = student.attendance[date];
+                        const status = student.attendance ? student.attendance[date] : null;
                         return (
                           <td key={date} className="px-2 py-3 text-center border-r border-slate-50 last:border-0">
                             {status === 'P' && <span className="inline-block w-6 h-6 leading-6 rounded bg-green-100 text-green-700 font-bold text-xs">P</span>}
@@ -215,22 +231,37 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
         <div className="text-center py-10 text-white font-medium">Carregando dados...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cards.map((card) => (
-            <div key={card.id} className="glass-panel p-6 rounded-xl shadow-lg border border-white/50 relative">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{card.title}</h3>
-                {getIcon(card.icon)}
-              </div>
-              <p className={`text-2xl font-black text-slate-800 truncate ${card.type === 'status' ? (String(card.value).toLowerCase() === 'aberto' ? 'text-green-600' : 'text-red-500') : ''}`}>
-                {card.value}
-              </p>
-              {card.trend && (
-                <div className="mt-4 flex items-center text-xs font-medium text-slate-500 bg-slate-100/50 inline-block px-2 py-1 rounded">
-                  {card.trend}
+          {cards.map((card) => {
+            // SUBSTITUIÇÃO DINÂMICA DOS VALORES
+            let displayValue = card.value;
+            let displayTrend = card.trend;
+
+            if (card.id === 'total_students') {
+               displayValue = realStats.students;
+               displayTrend = 'Calculado em tempo real';
+            }
+            if (card.id === 'active_classes') {
+               displayValue = realStats.classes;
+               displayTrend = 'Turmas cadastradas';
+            }
+
+            return (
+              <div key={card.id} className="glass-panel p-6 rounded-xl shadow-lg border border-white/50 relative">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{card.title}</h3>
+                  {getIcon(card.icon)}
                 </div>
-              )}
-            </div>
-          ))}
+                <p className={`text-2xl font-black text-slate-800 truncate ${card.type === 'status' ? (String(card.value).toLowerCase() === 'aberto' ? 'text-green-600' : 'text-red-500') : ''}`}>
+                  {displayValue}
+                </p>
+                {displayTrend && (
+                  <div className="mt-4 flex items-center text-xs font-medium text-slate-500 bg-slate-100/50 inline-block px-2 py-1 rounded">
+                    {displayTrend}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

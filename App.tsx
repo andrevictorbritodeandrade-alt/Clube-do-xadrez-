@@ -382,6 +382,7 @@ const App: React.FC = () => {
 
   const handleLogin = () => {
     setIsLoggedIn(true);
+    setSidebarOpen(false); // Reset sidebar state
     setView('home');
     // Add a history entry so Back button works to "logout" or stay in app
     window.history.pushState({ app: 'home' }, '', window.location.pathname);
@@ -389,6 +390,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setSidebarOpen(false); // Reset sidebar state
     setView('home'); // Reset view for next login
     resetClassesNav();
   };
@@ -493,13 +495,26 @@ const App: React.FC = () => {
                  </svg>
                </button>
                
-               <div className="flex flex-col">
-                 <h1 className="text-[10px] md:text-xs font-black text-blue-600 uppercase tracking-widest hidden md:block">
-                   CLUBE DO XADREZ
-                 </h1>
-                 <h2 className="text-base md:text-lg font-bold text-slate-800 leading-tight">
-                   {getTitle()}
-                 </h2>
+               <div className="flex flex-col justify-center">
+                 {currentView === 'home' ? (
+                   // Logo no Header (Igual Login)
+                   <div className="flex items-center gap-2 -ml-1">
+                      <span className="text-2xl md:text-3xl filter drop-shadow-md hover:scale-110 transition-transform cursor-default">♟️</span>
+                      <span className="text-lg md:text-2xl font-black uppercase tracking-wider animate-gradient-text leading-tight">
+                        Clube do Xadrez
+                      </span>
+                   </div>
+                 ) : (
+                   // Header padrão para outras views
+                   <>
+                     <h1 className="text-[10px] md:text-xs font-black text-blue-600 uppercase tracking-widest hidden md:block">
+                       CLUBE DO XADREZ
+                     </h1>
+                     <h2 className="text-base md:text-lg font-bold text-slate-800 leading-tight">
+                       {getTitle()}
+                     </h2>
+                   </>
+                 )}
                </div>
                
                <div className="ml-auto flex items-center">

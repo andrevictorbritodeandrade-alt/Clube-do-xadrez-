@@ -11,18 +11,18 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10 w-full h-full">
       
-      {/* Config Button Removed - Configuration is hardcoded */}
-
       {/* Title Section */}
       <div className="text-center mb-8 md:mb-10 drop-shadow-xl animate-fade-in-down">
-         <div className="text-7xl md:text-8xl mb-4 hover:scale-110 transition-transform duration-300 cursor-default">
-           ♟️
+         <div className="mb-4 hover:scale-110 transition-transform duration-300 cursor-default inline-block">
+           {/* Reverted to the simple Chess Pawn emoji as requested */}
+           <span className="text-7xl md:text-9xl drop-shadow-2xl">♟️</span>
          </div>
-         <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-wider">
-           Clube do <span className="text-blue-300">Xadrez</span>
+         {/* Animated Gradient applied to the entire text */}
+         <h1 className="text-3xl md:text-5xl font-black uppercase tracking-wider animate-gradient-text leading-tight p-2">
+           Clube do Xadrez
          </h1>
-         <div className="mt-2">
-            <span className="text-blue-100 text-xs md:text-sm font-bold tracking-[0.3em] uppercase bg-black/40 backdrop-blur-md py-2 px-6 rounded-full border border-white/10 shadow-lg">
+         <div className="mt-4">
+            <span className="text-white/90 text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase bg-white/10 backdrop-blur-md py-2 px-6 rounded-full border border-white/20 shadow-lg animate-pulse">
               Estratégia • Foco • Vitória
             </span>
          </div>
