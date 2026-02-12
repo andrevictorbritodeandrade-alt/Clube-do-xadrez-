@@ -1,0 +1,7 @@
+{
+  "name": "Clube do Xadrez",
+  "description": "Chess Club Management System with attendance, tournaments, and activity logs.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
