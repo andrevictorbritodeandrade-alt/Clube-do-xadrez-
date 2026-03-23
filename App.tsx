@@ -10,6 +10,7 @@ import { TournamentsView } from './components/TournamentsView';
 import { EmentaView } from './components/EmentaView';
 import { ExercisesView } from './components/ExercisesView';
 import { NotationView } from './components/NotationView';
+import { ScheduleView } from './components/ScheduleView';
 import { ActivityPrintModal } from './components/ActivityPrintModal';
 import { WeatherWidget } from './components/WeatherWidget'; // Import Widget
 import { ViewState, ClassDataMap, ActivityLogData, ClassData } from './types';
@@ -463,6 +464,8 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('app_currentView', currentView);
     window.location.hash = currentView;
+    // Expose setView to window for external access (like from ClassesView)
+    (window as any).setView = setView;
   }, [currentView]);
 
   useEffect(() => {
@@ -720,6 +723,7 @@ const App: React.FC = () => {
       case 'ementa': return <EmentaView onBack={goBack} />;
       case 'exercises': return <ExercisesView onBack={goBack} />;
       case 'notation': return <NotationView onBack={goBack} />;
+      case 'schedule': return <ScheduleView onBack={goBack} />;
       case 'profile': return <Profile user={mockUserProfile} onBack={goBack} />;
       default: return <DashboardView setView={setViewWithHistory} />;
     }
@@ -739,6 +743,7 @@ const App: React.FC = () => {
       case 'ementa': return 'Ementa Escolar';
       case 'exercises': return 'Exercícios Táticos';
       case 'notation': return 'Notação Algébrica';
+      case 'schedule': return 'Quadro de Horários';
       case 'profile': return 'Perfil';
       default: return 'Painel';
     }

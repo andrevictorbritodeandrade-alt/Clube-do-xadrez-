@@ -18,7 +18,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, on
   const getStats = (student: Student) => {
     const totalDays = Object.keys(student.attendance).length;
     if (totalDays === 0) return { pCount: 0, pPercent: 0 };
-    const pCount = Object.values(student.attendance).filter(v => v === 'H1' || v === 'H2' || v === 'H3' || v === 'H4').length;
+    const pCount = Object.values(student.attendance).filter(v => v === 'P').length;
     return {
       pCount,
       pPercent: Math.round((pCount / totalDays) * 100)

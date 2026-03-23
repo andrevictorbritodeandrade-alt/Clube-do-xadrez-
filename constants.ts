@@ -69,18 +69,80 @@ const students602Raw = [
   "Benício Diniz",
   "Cristal Marisa",
   "Davi Leal",
+  "Davi Lucas",
   "Davi Luiz",
-  "Davi Silva",
-  "Enzo de Melo",
-  "Glória",
+  "Davi Miguel",
+  "Eloah",
+  "Enzo",
+  "Gabriel",
+  "Gabriel de Oliveira",
+  "Geovanna",
+  "Heitor",
+  "Helena",
+  "Heloísa",
+  "Isadora",
   "João Gabriel",
-  "João Vitor",
-  "Joaquim Miguel",
-  "Laura dos Santos",
-  "Laura Lima",
-  "Luís Otávio",
+  "João Guilherme",
+  "João Lucas",
+  "João Pedro",
+  "João Victor",
+  "Júlia",
+  "Kauã",
+  "Lara",
+  "Larissa",
+  "Laura",
+  "Lavínia",
+  "Letícia",
+  "Lívia",
+  "Lorena",
+  "Lucas",
+  "Lucca",
+  "Luiz Felipe",
+  "Luiz Gustavo",
+  "Luiz Henrique",
+  "Luiz Otávio",
+  "Luíza",
+  "Manuela",
+  "Maria Alice",
+  "Maria Clara",
+  "Maria Eduarda",
+  "Maria Fernanda",
+  "Maria Júlia",
   "Maria Luíza",
-  "Mayra Carla"
+  "Maria Sophia",
+  "Mariana",
+  "Marina",
+  "Mateus",
+  "Matheus",
+  "Melissa",
+  "Miguel",
+  "Milena",
+  "Murilo",
+  "Natália",
+  "Nathan",
+  "Nicolas",
+  "Nicole",
+  "Otávio",
+  "Paulo",
+  "Pedro",
+  "Pietro",
+  "Rafael",
+  "Rafaela",
+  "Rebeca",
+  "Rodrigo",
+  "Samuel",
+  "Sarah",
+  "Sophia",
+  "Thales",
+  "Theo",
+  "Thiago",
+  "Valentina",
+  "Victor",
+  "Vinícius",
+  "Vitor",
+  "Vitória",
+  "Yasmin",
+  "Yuri"
 ];
 
 const students603Raw = [
@@ -143,7 +205,7 @@ const students604Raw = [
 
 const createStudents = (rawList: string[], classId: string) => {
   return rawList.map((name, i) => {
-    const attendance: { [date: string]: 'H1' | 'H2' | 'H3' | 'H4' | 'F' | null } = {};
+    const attendance: { [date: string]: 'P' | 'F' | null } = {};
     
     // Frequência de 09/03 para a Turma 603
     if (classId === '603') {
@@ -165,7 +227,7 @@ const createStudents = (rawList: string[], classId: string) => {
         "João Miguel Henriques Brum"
       ];
       
-      if (present603.includes(name)) attendance["09/03"] = "H1";
+      if (present603.includes(name)) attendance["09/03"] = "P";
       if (absent603.includes(name)) attendance["09/03"] = "F";
     }
 
@@ -189,7 +251,7 @@ const createStudents = (rawList: string[], classId: string) => {
         "Mirella Ramos dos Santos Gomes"
       ];
       
-      if (present604.includes(name)) attendance["09/03"] = "H1";
+      if (present604.includes(name)) attendance["09/03"] = "P";
       if (absent604.includes(name)) attendance["09/03"] = "F";
     }
 
@@ -208,7 +270,7 @@ export const initialClassData: ClassDataMap = {
     grade: "6", 
     students: createStudents(students601Raw, "601"),
     schedule: "08:00 - 09:00",
-    days: ["Segunda", "Quinta", "Sexta"]
+    days: ["Sexta"]
   },
   "602": { 
     id: "602", 
@@ -216,7 +278,7 @@ export const initialClassData: ClassDataMap = {
     grade: "6", 
     students: createStudents(students602Raw, "602"),
     schedule: "09:00 - 09:30",
-    days: ["Segunda", "Quinta", "Sexta"]
+    days: ["Segunda"]
   },
   "603": { 
     id: "603", 
@@ -232,7 +294,7 @@ export const initialClassData: ClassDataMap = {
     grade: "6", 
     students: createStudents(students604Raw, "604"),
     schedule: "11:00 - 11:30",
-    days: ["Segunda", "Quinta", "Sexta"]
+    days: ["Segunda", "Sexta"]
   }
 };
 

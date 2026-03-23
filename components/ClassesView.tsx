@@ -83,7 +83,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
     });
   };
 
-  const handleAttendance = (studentId: number, status: 'H1' | 'H2' | 'H3' | 'H4' | 'F') => {
+  const handleAttendance = (studentId: number, status: 'P' | 'F') => {
     if (!selectedClassId) return;
 
     setClassData((prev) => {
@@ -228,7 +228,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
     const totalDays = Object.keys(student.attendance).length;
     if (totalDays === 0) return { pCount: 0, pPercent: 0, fCount: 0, fPercent: 0 };
     
-    const pCount = Object.values(student.attendance).filter(v => v === 'H1' || v === 'H2' || v === 'H3' || v === 'H4').length;
+    const pCount = Object.values(student.attendance).filter(v => v === 'P').length;
     const fCount = Object.values(student.attendance).filter(v => v === 'F').length;
     
     return {
@@ -329,20 +329,29 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
              />
           </div>
           {currentClass.schedule && (
-            <div className="ml-6 hidden sm:flex flex-col">
+            <div className="ml-6 flex flex-col">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Horário</p>
               <p className="text-sm font-bold text-slate-700">{currentClass.schedule}</p>
             </div>
           )}
           {currentClass.days && (
-            <div className="ml-6 hidden md:flex flex-col">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Dias</p>
-              <p className="text-sm font-bold text-slate-700">{currentClass.days.join(', ')}</p>
+            <div className="ml-6 flex flex-col">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Dias de Aula</p>
+              <p className="text-sm font-bold text-blue-700">{currentClass.days.join(', ')}</p>
             </div>
           )}
         </div>
         
         <div className="flex items-center gap-2">
+           {/* Botão Quadro de Horários */}
+           <button
+             onClick={() => (window as any).setView('schedule')}
+             className="px-3 py-2 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+             title="Quadro de Horários"
+           >
+             <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+             Quadro
+           </button>
            {/* Botão Salvar na Nuvem */}
            <button
              id="save-cloud-btn"
@@ -435,66 +444,32 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
                  </div>
               </div>
 
-              {/* Row 2: Attendance Grid (Linear 5 cols) */}
-              <div className="grid grid-cols-5 gap-1 h-10 md:h-12">
-                 {/* Botão H1 */}
+              {/* Row 2: Attendance Grid (Presence/Absence) */}
+              <div className="grid grid-cols-2 gap-3 h-12">
+                 {/* Botão Presença */}
                  <button
-                   onClick={() => handleAttendance(student.id, 'H1')}
-                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
-                     status === 'H1'
-                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
-                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
+                   onClick={() => handleAttendance(student.id, 'P')}
+                   className={`rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 ${
+                     status === 'P'
+                     ? 'bg-green-600 text-white shadow-green-500/30 ring-2 ring-green-600 ring-offset-1'
+                     : 'bg-slate-50 text-slate-400 hover:bg-green-100 hover:text-green-600 border border-slate-200'
                    }`}
                  >
-                   H1
-                 </button>
-
-                 {/* Botão H2 */}
-                 <button
-                   onClick={() => handleAttendance(student.id, 'H2')}
-                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
-                     status === 'H2'
-                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
-                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
-                   }`}
-                 >
-                   H2
-                 </button>
-
-                 {/* Botão H3 */}
-                 <button
-                   onClick={() => handleAttendance(student.id, 'H3')}
-                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
-                     status === 'H3'
-                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
-                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
-                   }`}
-                 >
-                   H3
-                 </button>
-
-                 {/* Botão H4 */}
-                 <button
-                   onClick={() => handleAttendance(student.id, 'H4')}
-                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
-                     status === 'H4'
-                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
-                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
-                   }`}
-                 >
-                   H4
+                   {status === 'P' && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                   Presença
                  </button>
 
                  {/* Botão Falta */}
                  <button
                    onClick={() => handleAttendance(student.id, 'F')}
-                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
+                   className={`rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 ${
                      status === 'F'
                      ? 'bg-red-600 text-white shadow-red-500/30 ring-2 ring-red-600 ring-offset-1'
                      : 'bg-slate-50 text-slate-400 hover:bg-red-100 hover:text-red-600 border border-slate-200'
                    }`}
                  >
-                   F
+                   {status === 'F' && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>}
+                   Falta
                  </button>
               </div>
             </div>

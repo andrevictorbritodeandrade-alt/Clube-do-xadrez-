@@ -40,7 +40,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
         if (hasClassToday) {
           todayTotal += cls.students.length;
           cls.students.forEach(s => {
-            if (s.attendance && ['H1', 'H2', 'H3', 'H4'].includes(s.attendance[todayDate])) {
+            if (s.attendance && s.attendance[todayDate] === 'P') {
               todayAttendance++;
             }
           });
@@ -128,7 +128,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
               <tbody className="divide-y divide-slate-100 bg-white">
                 {sortedStudents.map((student) => {
                   const totalDays = dates.length;
-                  const presents = student.attendance ? Object.values(student.attendance).filter(v => ['H1', 'H2', 'H3', 'H4'].includes(v as string)).length : 0;
+                  const presents = student.attendance ? Object.values(student.attendance).filter(v => v === 'P').length : 0;
                   const percentage = totalDays ? Math.round((presents / totalDays) * 100) : 0;
                   
                   return (
@@ -138,10 +138,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                       </td>
                       {dates.map(date => {
                         const status = student.attendance ? student.attendance[date] : null;
-                        const isPresent = status && ['H1', 'H2', 'H3', 'H4'].includes(status);
+                        const isPresent = status === 'P';
                         return (
                           <td key={date} className="px-2 py-3 text-center border-r border-slate-50 last:border-0">
-                            {isPresent && <span className="inline-block w-8 h-6 leading-6 rounded bg-blue-100 text-blue-700 font-bold text-xs">{status}</span>}
+                            {isPresent && <span className="inline-block w-8 h-6 leading-6 rounded bg-blue-100 text-blue-700 font-bold text-xs">P</span>}
                             {status === 'F' && <span className="inline-block w-6 h-6 leading-6 rounded bg-red-100 text-red-700 font-bold text-xs">F</span>}
                             {!status && <span className="text-slate-200">-</span>}
                           </td>
