@@ -10,6 +10,8 @@ export interface ClassData {
   name: string;
   grade: string; // '6' or '7'
   students: Student[];
+  schedule?: string;
+  days?: string[];
 }
 
 export interface ClassDataMap {
@@ -102,7 +104,7 @@ export interface FirebaseConfig {
   measurementId?: string;
 }
 
-export type ViewState = 'home' | 'statistics' | 'classes' | 'tournaments' | 'activities' | 'play' | 'profile' | 'ementa' | 'exercises' | 'notation';
+export type ViewState = 'home' | 'statistics' | 'classes' | 'tournaments' | 'activities' | 'play' | 'profile' | 'ementa' | 'exercises' | 'notation' | 'schedule';
 
 // --- TOURNAMENT TYPES ---
 export interface Player {

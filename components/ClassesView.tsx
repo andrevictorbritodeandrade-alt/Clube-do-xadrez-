@@ -292,6 +292,9 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
             >
               <h3 className="text-3xl font-black text-slate-800">{cls.name.replace('Turma ', '')}</h3>
               <p className="text-slate-500 mt-2 font-medium">{cls.students.length} Alunos</p>
+              {cls.schedule && (
+                <p className="text-blue-600 mt-1 text-sm font-bold">{cls.schedule}</p>
+              )}
             </div>
           ))}
         </div>
@@ -325,6 +328,18 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
                className="text-sm font-bold text-blue-600 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
              />
           </div>
+          {currentClass.schedule && (
+            <div className="ml-6 hidden sm:flex flex-col">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Horário</p>
+              <p className="text-sm font-bold text-slate-700">{currentClass.schedule}</p>
+            </div>
+          )}
+          {currentClass.days && (
+            <div className="ml-6 hidden md:flex flex-col">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Dias</p>
+              <p className="text-sm font-bold text-slate-700">{currentClass.days.join(', ')}</p>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-2">

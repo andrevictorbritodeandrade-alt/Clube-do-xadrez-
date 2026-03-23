@@ -511,6 +511,43 @@ const App: React.FC = () => {
             needsSave = true;
           }
 
+          // Migration: Update schedules, days and student rosters (preserving attendance)
+          Object.keys(initialClassData).forEach(id => {
+            if (migratedClasses[id]) {
+              let classChanged = false;
+              
+              // Update schedule/days if missing or different
+              if (migratedClasses[id].schedule !== initialClassData[id].schedule) {
+                migratedClasses[id].schedule = initialClassData[id].schedule;
+                classChanged = true;
+              }
+              if (JSON.stringify(migratedClasses[id].days) !== JSON.stringify(initialClassData[id].days)) {
+                migratedClasses[id].days = initialClassData[id].days;
+                classChanged = true;
+              }
+
+              // Update students roster but preserve attendance for matching names
+              const currentStudents = migratedClasses[id].students || [];
+              const newStudents = initialClassData[id].students.map(ns => {
+                const existing = currentStudents.find(cs => cs.name === ns.name);
+                if (existing) {
+                  return { ...ns, attendance: { ...ns.attendance, ...existing.attendance } };
+                }
+                return ns;
+              });
+
+              // Check if students list actually changed (ignoring attendance for comparison)
+              const rosterChanged = JSON.stringify(currentStudents.map(s => s.name)) !== JSON.stringify(newStudents.map(s => s.name));
+              
+              if (rosterChanged) {
+                migratedClasses[id].students = newStudents;
+                classChanged = true;
+              }
+
+              if (classChanged) needsSave = true;
+            }
+          });
+
           // Migration for 09/03 attendance
           const checkAndMergeAttendance = (classId: string) => {
             if (migratedClasses[classId] && migratedClasses[classId].students) {
