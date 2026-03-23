@@ -18,19 +18,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ onBack }) => {
     {
       id: 'schedule',
       title: 'Quadro de Horários',
-      url: 'https://ais-dev-3ggu3a6a2x6uszjtczam6k-70841264505.us-east1.run.app/schedule_board.png',
+      url: '/quadro_horarios.png',
       description: 'Cronograma semanal das aulas de Xadrez.'
     },
     {
-      id: 'rules1',
-      title: 'Regras da Aula',
-      url: 'https://ais-dev-3ggu3a6a2x6uszjtczam6k-70841264505.us-east1.run.app/rules_lesson.png',
+      id: 'abc',
+      title: 'O ABC do Xadrez',
+      url: '/abc_xadrez.png',
+      description: 'Movimentos, regras básicas e notação.'
+    },
+    {
+      id: 'rules_vibrant',
+      title: 'Regras da Aula (Colorido)',
+      url: '/regras_vibrante.png',
       description: 'Silêncio absoluto e regras de vitória.'
     },
     {
-      id: 'rules2',
-      title: 'Regras da Sala',
-      url: 'https://ais-dev-3ggu3a6a2x6uszjtczam6k-70841264505.us-east1.run.app/rules_room.png',
+      id: 'rules_brown',
+      title: 'Regras da Sala (Clássico)',
+      url: '/regras_marrom.png',
       description: 'Proibições e combinados em Libras.'
     }
   ];

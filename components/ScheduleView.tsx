@@ -21,14 +21,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ onBack }) => {
       <div className="glass-panel p-4 overflow-hidden rounded-2xl shadow-2xl border border-white/20">
         <div className="relative aspect-video w-full overflow-hidden rounded-xl">
           <img 
-            src="https://ais-dev-3ggu3a6a2x6uszjtczam6k-70841264505.us-east1.run.app/schedule_board.png" 
+            src="/quadro_horarios.png" 
             alt="Quadro de Horários - Xadrez"
             className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
-            onError={(e) => {
-              // Fallback to the user provided image URL if the local one fails
-              (e.target as HTMLImageElement).src = "https://ais-dev-3ggu3a6a2x6uszjtczam6k-70841264505.us-east1.run.app/schedule_board.png";
-            }}
           />
         </div>
         
