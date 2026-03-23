@@ -1,47 +1,90 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, writeBatch } from 'firebase/firestore';
-import { getAuth, signInAnonymously } from 'firebase/auth';
-import { FirebaseConfig, DashboardCardData, ClassDataMap, TournamentState } from '../types';
+import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, writeBatch, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { FirebaseConfig, DashboardCardData, ClassDataMap, TournamentState, ActivityLogData } from '../types';
 
-// Hardcoded configuration as requested for permanent cloud connection
-const firebaseConfig = {
-  apiKey: "AIzaSyD_C_yn_RyBSopY7Tb9aqLW8akkXJR94Vg",
-  authDomain: "chaveunica-225e0.firebaseapp.com",
-  projectId: "chaveunica-225e0",
-  storageBucket: "chaveunica-225e0.firebasestorage.app",
-  messagingSenderId: "324211037832",
-  appId: "1:324211037832:web:362a46e6446ea37b85b13d",
-  measurementId: "G-MRBDJC3QXZ"
+const CONFIG_KEY = 'chess_club_firebase_config';
+
+export const getStoredConfig = (): FirebaseConfig | null => {
+  // First try environment variables
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+    return {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
+    };
+  }
+
+  const stored = localStorage.getItem(CONFIG_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+};
+
+export const saveConfig = (config: FirebaseConfig) => {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  // Reload the page to apply the new config
+  window.location.reload();
 };
 
 let db: any = null;
 let app: any = null;
-
-// Removed localStorage logic as we are enforcing the specific cloud config
-export const getStoredConfig = (): FirebaseConfig | null => {
-  return firebaseConfig;
-};
-
-export const saveConfig = (config: FirebaseConfig) => {
-  // No-op or log warning, as config is now hardcoded
-  console.warn("Config is hardcoded, saveConfig ignored.");
-};
+let auth: any = null;
 
 export const initFirebase = () => {
+  const config = getStoredConfig();
+  if (!config) {
+    console.warn("Firebase config not found in localStorage.");
+    return false;
+  }
+
   try {
     if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
+      app = initializeApp(config);
     } else {
       app = getApp();
     }
     db = getFirestore(app);
-    const auth = getAuth(app);
+    auth = getAuth(app);
+
+    // Enable offline persistence
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
+      } else if (err.code === 'unimplemented') {
+        console.warn("The current browser does not support all of the features required to enable persistence.");
+      }
+    });
+
     signInAnonymously(auth).catch((err) => console.error("Auth Error:", err));
     return true;
   } catch (e) {
     console.error("Erro ao iniciar Firebase", e);
     return false;
   }
+};
+
+export const onAuthChange = (callback: (user: any) => void) => {
+  if (!auth) {
+    const config = getStoredConfig();
+    if (config) {
+      if (!getApps().length) app = initializeApp(config);
+      else app = getApp();
+      auth = getAuth(app);
+    }
+  }
+  if (auth) {
+    return onAuthStateChanged(auth, callback);
+  }
+  return () => {};
 };
 
 // Inicializa cards padrão se não existirem
@@ -97,15 +140,12 @@ export const subscribeToClasses = (callback: (data: ClassDataMap) => void) => {
   return onSnapshot(collection(db, 'classes'), (snapshot: any) => {
     const classes: ClassDataMap = {};
     if (snapshot.empty) {
-        // Option: return empty or don't callback to keep initial state?
-        // Let's callback empty so app knows it's empty
+        // Do not callback with empty data to avoid wiping local data
+        return;
     }
     snapshot.forEach((doc: any) => {
       classes[doc.id] = doc.data();
     });
-    // Prevent callback if empty to avoid wiping initial mock data? 
-    // No, "Everything will be saved" means cloud is truth.
-    // However, if cloud is empty, we might want to seed it from App.tsx.
     callback(classes);
   });
 };
@@ -121,6 +161,22 @@ export const saveClassesToFirestore = async (data: ClassDataMap) => {
   });
   
   await batch.commit();
+};
+
+// --- REAL-TIME ACTIVITY LOG SYNC ---
+
+export const subscribeToActivityLog = (callback: (data: ActivityLogData | null) => void) => {
+  if (!db) return () => {};
+  return onSnapshot(doc(db, 'activities', 'log'), (doc: any) => {
+    if (doc.exists()) {
+      callback(doc.data() as ActivityLogData);
+    }
+  });
+};
+
+export const saveActivityLogToFirestore = async (data: ActivityLogData) => {
+  if (!db) return;
+  await setDoc(doc(db, 'activities', 'log'), data);
 };
 
 // --- REAL-TIME TOURNAMENT SYNC ---

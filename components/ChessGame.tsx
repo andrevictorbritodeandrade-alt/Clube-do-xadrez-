@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
@@ -22,47 +22,30 @@ export const ChessGame: React.FC<ChessGameProps> = ({ onBack }) => {
   
   const gameContainerRef = useRef<HTMLDivElement>(null);
 
-  // Safe game mutator for async operations (AI, Reset, Undo)
-  function safeGameMutate(modify: (g: any) => void) {
-    setGame((g) => {
-      const update = new Chess(g.fen());
-      modify(update);
-      return update;
-    });
-  }
-
   // --- AI LOGIC (MiniMax Simulation) ---
   
-  const getBestMove = (game: any, depth: number): string | null => {
-    const possibleMoves = game.moves();
+  const getBestMove = (gameInstance: any, depth: number): string | null => {
+    const possibleMoves = gameInstance.moves();
     if (possibleMoves.length === 0) return null;
     if (depth === 0) return possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
     let bestMove = null;
-    let bestValue = -Infinity;
+    
+    // Simple evaluation heuristic
     const values: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
+    // Try to find a capturing move or just random for low levels
     for (const move of possibleMoves) {
-      game.move(move);
+      gameInstance.move(move);
+      
+      // Basic Eval
       let boardValue = 0;
-      game.board().forEach((row: any[]) => {
-        row.forEach((piece) => {
-          if (piece) {
-            const val = values[piece.type];
-            boardValue += piece.color === 'w' ? val : -val;
-          }
-        });
-      });
-      
-      if (move.includes('x')) boardValue += 0.5;
-      if (move.includes('+')) boardValue += 0.5;
-      boardValue += Math.random() * 0.5;
+      if (move.includes('x')) boardValue += 1; // Incentive capturing
+      if (move.includes('#')) boardValue += 100; // Incentive mate
 
-      // In a real engine we'd minimize/maximize based on turn. 
-      // Simplified: Just update best move if "interesting"
-      game.undo();
+      gameInstance.undo();
       
-      if (!bestMove || (Math.random() > 0.7 && depth > 1)) {
+      if (!bestMove || Math.random() > 0.6) {
         bestMove = move;
       }
     }
@@ -74,9 +57,10 @@ export const ChessGame: React.FC<ChessGameProps> = ({ onBack }) => {
     setStatus("IA pensando...");
     
     setTimeout(() => {
-      // Use functional update to ensure we have latest state
       setGame((currentG) => {
+        // Create a completely new instance based on current FEN to avoid mutation issues
         const tempGame = new Chess(currentG.fen());
+        
         if (tempGame.isGameOver() || tempGame.isDraw()) {
             setIsAiThinking(false);
             return currentG;
@@ -84,16 +68,19 @@ export const ChessGame: React.FC<ChessGameProps> = ({ onBack }) => {
         
         const move = getBestMove(tempGame, LEVELS[level as keyof typeof LEVELS].depth);
         if (move) {
-            tempGame.move(move);
-            // Update status immediately after AI move
-            const statusText = getStatusText(tempGame);
-            setStatus(statusText);
-            setMoveHistory(tempGame.history());
+            try {
+                tempGame.move(move);
+                const statusText = getStatusText(tempGame);
+                setStatus(statusText);
+                setMoveHistory(tempGame.history());
+            } catch (e) {
+                console.error("AI Move Error", e);
+            }
         }
         setIsAiThinking(false);
         return tempGame;
       });
-    }, 500 + Math.random() * 1000); 
+    }, 500 + Math.random() * 500); 
   }
 
   // Helper to determine status text based on a game instance
@@ -119,34 +106,34 @@ export const ChessGame: React.FC<ChessGameProps> = ({ onBack }) => {
   }
 
   function onDrop(sourceSquare: string, targetSquare: string) {
-    // Only block if it's AI turn in PvE
-    if (gameMode === 'ai' && game.turn() !== 'w') return false;
+    // 1. Prevent moves if game over
+    if (game.isGameOver() || game.isDraw()) return false;
 
-    // Synchronous validation using a temporary game instance
+    // 2. Prevent moves if AI is thinking
+    if (gameMode === 'ai' && (isAiThinking || game.turn() !== 'w')) return false;
+
+    // 3. Synchronous validation using a temporary game instance
     const gameCopy = new Chess(game.fen());
     let move = null;
     try {
       move = gameCopy.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: 'q',
+        promotion: 'q', // Always promote to queen for simplicity
       });
     } catch (e) {
-      // invalid move
       return false;
     }
 
     if (move === null) return false;
 
-    // If valid, update state
+    // 4. If valid, update state
     setGame(gameCopy);
-    
-    // Update status immediately with the new state
     updateStatus(gameCopy);
     
-    // Trigger AI response
+    // 5. Trigger AI response if needed
     if (gameMode === 'ai') {
-      setTimeout(makeRandomMove, 200);
+      setTimeout(makeRandomMove, 250);
     }
     return true;
   }
@@ -156,13 +143,17 @@ export const ChessGame: React.FC<ChessGameProps> = ({ onBack }) => {
     setGame(newGame);
     setMoveHistory([]);
     setStatus(gameMode === 'ai' ? "Sua vez" : "Vez das Brancas");
+    setIsAiThinking(false);
   }
 
   function undoMove() {
     setGame((g) => {
       const update = new Chess(g.fen());
       update.undo(); 
-      if (gameMode === 'ai') update.undo(); 
+      if (gameMode === 'ai') {
+          // In AI mode, undo twice to go back to user turn
+          update.undo(); 
+      }
       updateStatus(update);
       return update;
     });
@@ -241,15 +232,15 @@ export const ChessGame: React.FC<ChessGameProps> = ({ onBack }) => {
         {/* Game Board Area */}
         <div className="flex-1 w-full max-w-2xl flex flex-col">
           <div className="bg-white p-2 md:p-4 rounded-xl shadow-lg border border-slate-200">
-            <Chessboard 
-              position={game.fen()} 
-              onPieceDrop={onDrop}
-              animationDuration={200}
-              customBoardStyle={{
-                borderRadius: '4px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-              }}
-            />
+             <Chessboard 
+                position={game.fen()} 
+                onPieceDrop={onDrop}
+                animationDuration={200}
+                customBoardStyle={{
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                }}
+             />
           </div>
           
           {/* Algebraic Notation Bar (Below Board) */}

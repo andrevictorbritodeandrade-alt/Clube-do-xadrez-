@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClassData, ClassDataMap, Student } from '../types';
 import { PrintPreviewModal } from './PrintPreviewModal';
+import { saveClassesToFirestore } from '../services/firebaseService';
+import { initialClassData } from '../constants';
 
 interface ClassesViewProps {
   classData: ClassDataMap;
@@ -11,6 +13,7 @@ interface ClassesViewProps {
   setSelectedGrade: (grade: string | null) => void;
   selectedClassId: string | null;
   setSelectedClassId: (id: string | null) => void;
+  onSave: (data: ClassDataMap) => Promise<void>;
 }
 
 export const ClassesView: React.FC<ClassesViewProps> = ({ 
@@ -20,7 +23,8 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
   selectedGrade,
   setSelectedGrade,
   selectedClassId,
-  setSelectedClassId
+  setSelectedClassId,
+  onSave
 }) => {
   
   // Modals State
@@ -30,13 +34,37 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Student | null>(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
   
+  // Saving State
+  const [isSaving, setIsSaving] = useState(false);
+  
   // Input States
   const [newStudentName, setNewStudentName] = useState('');
   const [targetClassId, setTargetClassId] = useState('');
   
   // Date Logic
-  const today = new Date();
-  const dateStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth()+1).toString().padStart(2, '0')}`;
+  const getTodayISO = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const day = today.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(() => {
+    return localStorage.getItem('app_selectedDate') || getTodayISO();
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_selectedDate', selectedDate);
+  }, [selectedDate]);
+
+  const getFormattedDate = (isoDate: string) => {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}`;
+  };
+
+  const dateStr = getFormattedDate(selectedDate);
 
   // --- CRUD ACTIONS ---
 
@@ -55,7 +83,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
     });
   };
 
-  const handleAttendance = (studentId: number, status: 'P' | 'F') => {
+  const handleAttendance = (studentId: number, status: 'H1' | 'H2' | 'H3' | 'H4' | 'F') => {
     if (!selectedClassId) return;
 
     setClassData((prev) => {
@@ -65,20 +93,53 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
       const studentIndex = newData[selectedClassId].students.findIndex(s => s.id === studentId);
       if (studentIndex >= 0) {
         const updatedStudents = [...newData[selectedClassId].students];
+        const currentStudent = updatedStudents[studentIndex];
+        
+        // Lógica de Toggle: Se já estiver com o status clicado, remove (null). Se for diferente, aplica o novo.
+        const currentStatus = currentStudent.attendance[dateStr];
+        const newStatus = currentStatus === status ? null : status;
+
+        const newAttendance = { ...currentStudent.attendance };
+
+        if (newStatus === null) {
+          delete newAttendance[dateStr]; // Remove a marcação se for toggle
+        } else {
+          newAttendance[dateStr] = newStatus; // Aplica nova marcação
+        }
+
         updatedStudents[studentIndex] = {
-          ...updatedStudents[studentIndex],
-          attendance: {
-            ...updatedStudents[studentIndex].attendance,
-            [dateStr]: status
-          }
+          ...currentStudent,
+          attendance: newAttendance
         };
+        
         newData[selectedClassId] = {
           ...newData[selectedClassId],
           students: updatedStudents
         };
+        
+        // Salva silenciosamente (sem bloquear UI)
       }
       return newData;
     });
+  };
+
+  const handleManualSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(classData);
+      // Feedback visual rápido
+      const btn = document.getElementById('save-cloud-btn');
+      if(btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Salvo!';
+        setTimeout(() => { btn.innerHTML = originalText }, 2000);
+      }
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      alert("Erro ao sincronizar com a nuvem.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const addStudent = () => {
@@ -96,6 +157,9 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
       // Adiciona e ordena imediatamente
       const updatedList = [...newData[selectedClassId].students, newStudent];
       newData[selectedClassId].students = sortStudentsAlphabetically(updatedList);
+      
+      // Salva imediatamente na nuvem
+      
       return newData;
     });
     setNewStudentName('');
@@ -112,6 +176,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
       );
       // Reordena após editar o nome para manter a lista correta
       newData[selectedClassId].students = sortStudentsAlphabetically(students);
+      
       return newData;
     });
     setShowEditModal(null);
@@ -124,6 +189,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
     setClassData(prev => {
       const newData = { ...prev };
       newData[selectedClassId].students = newData[selectedClassId].students.filter(s => s.id !== showDeleteConfirm.id);
+      
       return newData;
     });
     setShowDeleteConfirm(null);
@@ -162,7 +228,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
     const totalDays = Object.keys(student.attendance).length;
     if (totalDays === 0) return { pCount: 0, pPercent: 0, fCount: 0, fPercent: 0 };
     
-    const pCount = Object.values(student.attendance).filter(v => v === 'P').length;
+    const pCount = Object.values(student.attendance).filter(v => v === 'H1' || v === 'H2' || v === 'H3' || v === 'H4').length;
     const fCount = Object.values(student.attendance).filter(v => v === 'F').length;
     
     return {
@@ -195,16 +261,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
           >
             <div className="text-8xl mb-4 group-hover:scale-110 transition-transform">6️⃣</div>
             <h3 className="text-4xl font-black text-slate-800">6º ANO</h3>
-            <p className="text-slate-500 mt-2 font-bold">Turmas 601, 602, 603</p>
-          </div>
-
-          <div 
-            onClick={() => setSelectedGrade('7')}
-            className="glass-panel h-64 flex flex-col items-center justify-center cursor-pointer hover:bg-white/90 transition-all transform hover:scale-[1.02] group"
-          >
-            <div className="text-8xl mb-4 group-hover:scale-110 transition-transform">7️⃣</div>
-            <h3 className="text-4xl font-black text-slate-800">7º ANO</h3>
-            <p className="text-slate-500 mt-2 font-bold">Turmas 711 - 723</p>
+            <p className="text-slate-500 mt-2 font-bold">4 Turmas</p>
           </div>
         </div>
       </div>
@@ -259,12 +316,36 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           </button>
-          <div className="ml-3">
-             <p className="text-xs text-blue-600 font-bold uppercase tracking-wide">Chamada • {dateStr}</p>
+          <div className="ml-3 flex flex-col">
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Data da Chamada</p>
+             <input 
+               type="date" 
+               value={selectedDate}
+               onChange={(e) => setSelectedDate(e.target.value)}
+               className="text-sm font-bold text-blue-600 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
+             />
           </div>
         </div>
         
         <div className="flex items-center gap-2">
+           {/* Botão Salvar na Nuvem */}
+           <button
+             id="save-cloud-btn"
+             onClick={handleManualSave}
+             disabled={isSaving}
+             className="px-3 py-2 flex items-center justify-center bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-indigo-700 transition disabled:opacity-70 disabled:cursor-wait"
+             title="Salvar na Nuvem"
+           >
+              {isSaving ? (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                  Salvar
+                </>
+              )}
+           </button>
+
            <button
              onClick={() => setShowPrintModal(true)}
              className="w-10 h-10 flex items-center justify-center bg-slate-800 text-white rounded-lg shadow-md hover:bg-slate-900 transition"
@@ -272,7 +353,23 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
            >
              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
            </button>
-           {/* Botão de Ordenar removido pois agora é automático, mantido apenas o ícone para feedback visual se desejar, ou removido para limpar UI */}
+
+           <button
+             onClick={() => {
+               if (window.confirm('Tem certeza que deseja restaurar a lista original desta turma? Isso apagará as presenças e alunos adicionados manualmente.')) {
+                 setClassData(prev => {
+                   const newData = { ...prev };
+                   newData[selectedClassId] = initialClassData[selectedClassId];
+                   return newData;
+                 });
+               }
+             }}
+             className="w-10 h-10 flex items-center justify-center bg-orange-500 text-white rounded-lg shadow-md hover:bg-orange-600 transition"
+             title="Restaurar Lista Original"
+           >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+           </button>
+           
           <button 
             onClick={() => { setNewStudentName(''); setShowAddModal(true); }}
             className="w-10 h-10 flex items-center justify-center bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition"
@@ -323,27 +420,57 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
                  </div>
               </div>
 
-              {/* Row 2: Attendance Grid (Linear 4 cols) */}
-              <div className="grid grid-cols-4 gap-2 h-12">
-                 {/* 1. Botão Presente */}
+              {/* Row 2: Attendance Grid (Linear 5 cols) */}
+              <div className="grid grid-cols-5 gap-1 h-10 md:h-12">
+                 {/* Botão H1 */}
                  <button
-                   onClick={() => handleAttendance(student.id, 'P')}
+                   onClick={() => handleAttendance(student.id, 'H1')}
                    className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
-                     status === 'P'
-                     ? 'bg-green-600 text-white shadow-green-500/30 ring-2 ring-green-600 ring-offset-1'
-                     : 'bg-slate-50 text-slate-400 hover:bg-green-100 hover:text-green-600 border border-slate-200'
+                     status === 'H1'
+                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
+                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
                    }`}
                  >
-                   {status === 'P' ? 'PRESENTE' : 'P'}
+                   H1
                  </button>
 
-                 {/* 2. Stat Presente */}
-                 <div className="rounded-lg bg-green-50 border border-green-100 flex flex-col items-center justify-center text-green-700">
-                    <span className="text-xs font-bold uppercase opacity-70">Presenças</span>
-                    <span className="font-black text-sm">{stats.pCount} <span className="text-[10px] opacity-70">({stats.pPercent}%)</span></span>
-                 </div>
+                 {/* Botão H2 */}
+                 <button
+                   onClick={() => handleAttendance(student.id, 'H2')}
+                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
+                     status === 'H2'
+                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
+                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
+                   }`}
+                 >
+                   H2
+                 </button>
 
-                 {/* 3. Botão Falta */}
+                 {/* Botão H3 */}
+                 <button
+                   onClick={() => handleAttendance(student.id, 'H3')}
+                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
+                     status === 'H3'
+                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
+                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
+                   }`}
+                 >
+                   H3
+                 </button>
+
+                 {/* Botão H4 */}
+                 <button
+                   onClick={() => handleAttendance(student.id, 'H4')}
+                   className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
+                     status === 'H4'
+                     ? 'bg-blue-600 text-white shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-1'
+                     : 'bg-slate-50 text-slate-400 hover:bg-blue-100 hover:text-blue-600 border border-slate-200'
+                   }`}
+                 >
+                   H4
+                 </button>
+
+                 {/* Botão Falta */}
                  <button
                    onClick={() => handleAttendance(student.id, 'F')}
                    className={`rounded-lg font-black text-xs md:text-sm uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center justify-center ${
@@ -352,14 +479,8 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
                      : 'bg-slate-50 text-slate-400 hover:bg-red-100 hover:text-red-600 border border-slate-200'
                    }`}
                  >
-                   {status === 'F' ? 'FALTA' : 'F'}
+                   F
                  </button>
-
-                 {/* 4. Stat Falta */}
-                 <div className="rounded-lg bg-red-50 border border-red-100 flex flex-col items-center justify-center text-red-700">
-                    <span className="text-xs font-bold uppercase opacity-70">Faltas</span>
-                    <span className="font-black text-sm">{stats.fCount} <span className="text-[10px] opacity-70">({stats.fPercent}%)</span></span>
-                 </div>
               </div>
             </div>
           );

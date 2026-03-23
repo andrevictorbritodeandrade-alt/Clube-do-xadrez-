@@ -35,7 +35,7 @@ export const AiAssistant: React.FC = () => {
 
     try {
       // Initialize Gemini
-      // IMPORTANTE: A chave deve estar configurada no ambiente como process.env.API_KEY
+      // Utilizando a chave fornecida pelo usuário
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const systemInstruction = `

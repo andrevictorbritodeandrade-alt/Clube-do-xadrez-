@@ -1,25 +1,26 @@
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "jspdf": "https://esm.sh/jspdf@^4.1.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "chess.js": "https://esm.sh/chess.js@^1.4.0",
-    "firebase/": "https://esm.sh/firebase@^12.9.0/",
-    "react-chessboard": "https://esm.sh/react-chessboard@^5.10.0",
-    "html2canvas": "https://esm.sh/html2canvas@^1.4.1",
-    "@google/genai": "https://esm.sh/@google/genai@^1.41.0"
-  }
-}
-</script>
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CLUBE DO XADREZ</title>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react": "https://esm.sh/react@^19.2.4",
+        "jspdf": "https://esm.sh/jspdf@^4.1.0",
+        "recharts": "https://esm.sh/recharts@^3.7.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "chess.js": "https://esm.sh/chess.js@^1.4.0",
+        "firebase/": "https://esm.sh/firebase@^12.9.0/",
+        "react-chessboard": "https://esm.sh/react-chessboard@^5.10.0",
+        "html2canvas": "https://esm.sh/html2canvas@^1.4.1",
+        "@google/genai": "https://esm.sh/@google/genai@^1.41.0"
+      }
+    }
+    </script>
     
     <!-- PWA Manifest & Settings -->
     <link rel="manifest" href="manifest.json" />
@@ -128,7 +129,8 @@
         }
       }
     </style>
-  </head>
+  <link rel="stylesheet" href="/index.css">
+</head>
   <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>

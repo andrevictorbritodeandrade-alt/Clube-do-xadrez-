@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
-import { Login } from './components/Login';
 import { ChessGame } from './components/ChessGame';
 import { Profile } from './components/Profile';
 import { BackgroundSlider } from './components/BackgroundSlider';
@@ -15,7 +14,7 @@ import { ActivityPrintModal } from './components/ActivityPrintModal';
 import { WeatherWidget } from './components/WeatherWidget'; // Import Widget
 import { ViewState, ClassDataMap, ActivityLogData, ClassData } from './types';
 import { initialActivityLogData, mockUserProfile, initialClassData } from './constants';
-import { initFirebase, subscribeToClasses, saveClassesToFirestore } from './services/firebaseService';
+import { initFirebase, subscribeToClasses, saveClassesToFirestore, subscribeToActivityLog, saveActivityLogToFirestore } from './services/firebaseService';
 
 // --- Global Footer Component ---
 const GlobalFooter = () => (
@@ -41,18 +40,52 @@ interface ActivityLogViewProps {
   setData: React.Dispatch<React.SetStateAction<ActivityLogData>>;
   onBack: () => void;
   availableClasses: {id: string, name: string}[];
+  onSave: (data: ActivityLogData) => Promise<void>;
 }
 
-const ActivityLogView: React.FC<ActivityLogViewProps> = ({ data, setData, onBack, availableClasses }) => {
+const ActivityLogView: React.FC<ActivityLogViewProps> = ({ data, setData, onBack, availableClasses, onSave }) => {
   const { header, log } = data;
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState(() => {
+    return localStorage.getItem('app_activity_isEditing') === 'true';
+  });
+  const [editingIndex, setEditingIndex] = useState<number | null>(() => {
+    const val = localStorage.getItem('app_activity_editingIndex');
+    return val ? parseInt(val, 10) : null;
+  });
   const [showPrintModal, setShowPrintModal] = useState(false);
   
   // Form State
-  const [formDate, setFormDate] = useState('');
-  const [formContent, setFormContent] = useState('');
-  const [formClasses, setFormClasses] = useState<string[]>([]);
+  const [formDate, setFormDate] = useState(() => {
+    return localStorage.getItem('app_activity_formDate') || '';
+  });
+  const [formContent, setFormContent] = useState(() => {
+    return localStorage.getItem('app_activity_formContent') || '';
+  });
+  const [formClasses, setFormClasses] = useState<string[]>(() => {
+    const val = localStorage.getItem('app_activity_formClasses');
+    return val ? JSON.parse(val) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_activity_isEditing', String(isEditing));
+  }, [isEditing]);
+
+  useEffect(() => {
+    if (editingIndex !== null) localStorage.setItem('app_activity_editingIndex', String(editingIndex));
+    else localStorage.removeItem('app_activity_editingIndex');
+  }, [editingIndex]);
+
+  useEffect(() => {
+    localStorage.setItem('app_activity_formDate', formDate);
+  }, [formDate]);
+
+  useEffect(() => {
+    localStorage.setItem('app_activity_formContent', formContent);
+  }, [formContent]);
+
+  useEffect(() => {
+    localStorage.setItem('app_activity_formClasses', JSON.stringify(formClasses));
+  }, [formClasses]);
 
   const openNew = () => {
     setFormDate('');
@@ -88,14 +121,20 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ data, setData, onBack
           classes: formClasses,
           activities: activityLines
         };
-        return { ...prev, log: newLog };
+        const newData = { ...prev, log: newLog };
+        onSave(newData).catch(console.error);
+        return newData;
       });
     } else {
       // Create Mode
-      setData(prev => ({
-        ...prev,
-        log: [...prev.log, { date: formDate, classes: formClasses, activities: activityLines }]
-      }));
+      setData(prev => {
+        const newData = {
+          ...prev,
+          log: [...prev.log, { date: formDate, classes: formClasses, activities: activityLines }]
+        };
+        onSave(newData).catch(console.error);
+        return newData;
+      });
     }
     
     setIsEditing(false);
@@ -104,10 +143,14 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ data, setData, onBack
 
   const handleDelete = (index: number) => {
     if(window.confirm('Tem certeza que deseja apagar este registro?')) {
-      setData(prev => ({
-        ...prev,
-        log: prev.log.filter((_, i) => i !== index)
-      }));
+      setData(prev => {
+        const newData = {
+          ...prev,
+          log: prev.log.filter((_, i) => i !== index)
+        };
+        onSave(newData).catch(console.error);
+        return newData;
+      });
     }
   };
 
@@ -297,105 +340,299 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ data, setData, onBack
   );
 };
 
+// --- Sync Status Indicator ---
+const SyncStatusIndicator = ({ status }: { status: 'synced' | 'saving' | 'error' }) => {
+  if (status === 'saving') {
+    return (
+      <div className="flex items-center gap-1.5 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">
+        <svg className="animate-spin h-3 w-3 text-blue-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Salvando...</span>
+      </div>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <div className="flex items-center gap-1.5 bg-red-600/20 px-2 py-1 rounded-full border border-red-500/30">
+        <svg className="h-3 w-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="text-[10px] font-bold text-red-200 uppercase tracking-wider">Erro ao Salvar</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 bg-green-600/20 px-2 py-1 rounded-full border border-green-500/30 transition-all duration-500">
+      <svg className="h-3 w-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+      <span className="text-[10px] font-bold text-green-200 uppercase tracking-wider">Sincronizado</span>
+    </div>
+  );
+};
+
 // --- Main App Component ---
 
 const App: React.FC = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentView, setView] = useState<ViewState>('home');
+  const [currentView, setView] = useState<ViewState>(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && ['home', 'statistics', 'classes', 'activities', 'tournaments', 'play', 'ementa', 'exercises', 'notation', 'profile'].includes(hash)) {
+      return hash as ViewState;
+    }
+    return (localStorage.getItem('app_currentView') as ViewState) || 'home';
+  });
   
   // Shared State
-  const [classData, setClassData] = useState<ClassDataMap>(initialClassData);
-  const [activityLogData, setActivityLogData] = useState<ActivityLogData>(initialActivityLogData);
-
-  // State for Navigation within Classes
-  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [classData, setClassData] = useState<ClassDataMap>(() => {
+    const stored = localStorage.getItem('app_classData');
+    return stored ? JSON.parse(stored) : initialClassData;
+  });
+  const [activityLogData, setActivityLogData] = useState<ActivityLogData>(() => {
+    const stored = localStorage.getItem('app_activityLogData');
+    return stored ? JSON.parse(stored) : initialActivityLogData;
+  });
 
   // Persistence Refs
-  const isRemoteUpdate = useRef(false);
-  const hasLoaded = useRef(false);
+  const isRemoteClassUpdate = useRef(false);
+  const hasLoadedClasses = useRef(false);
+  const isRemoteActivityUpdate = useRef(false);
+  const hasLoadedActivities = useRef(false);
+
+  // Sync Status State
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'error'>('synced');
+
+  // Helper to save classes explicitly
+  const handleSaveClasses = async (newData: ClassDataMap) => {
+    setSyncStatus('saving');
+    try {
+      await saveClassesToFirestore(newData);
+      setSyncStatus('synced');
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      setSyncStatus('error');
+    }
+  };
+
+  // Helper to save activity log explicitly
+  const handleSaveActivityLog = async (newData: ActivityLogData) => {
+    setSyncStatus('saving');
+    try {
+      await saveActivityLogToFirestore(newData);
+      setSyncStatus('synced');
+    } catch (error) {
+      console.error("Erro ao salvar atividades:", error);
+      setSyncStatus('error');
+    }
+  };
+
+  useEffect(() => {
+    localStorage.setItem('app_classData', JSON.stringify(classData));
+    if (hasLoadedClasses.current) {
+      if (isRemoteClassUpdate.current) {
+        isRemoteClassUpdate.current = false;
+      } else {
+        handleSaveClasses(classData);
+      }
+    }
+  }, [classData]);
+
+  useEffect(() => {
+    localStorage.setItem('app_activityLogData', JSON.stringify(activityLogData));
+    if (hasLoadedActivities.current) {
+      if (isRemoteActivityUpdate.current) {
+        isRemoteActivityUpdate.current = false;
+      } else {
+        handleSaveActivityLog(activityLogData);
+      }
+    }
+  }, [activityLogData]);
+
+  // State for Navigation within Classes
+  const [selectedGrade, setSelectedGrade] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('grade') || localStorage.getItem('app_selectedGrade');
+  });
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('classId') || localStorage.getItem('app_selectedClassId');
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_currentView', currentView);
+    window.location.hash = currentView;
+  }, [currentView]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (selectedGrade) {
+      localStorage.setItem('app_selectedGrade', selectedGrade);
+      url.searchParams.set('grade', selectedGrade);
+    } else {
+      localStorage.removeItem('app_selectedGrade');
+      url.searchParams.delete('grade');
+    }
+    window.history.replaceState({}, '', url.toString());
+  }, [selectedGrade]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (selectedClassId) {
+      localStorage.setItem('app_selectedClassId', selectedClassId);
+      url.searchParams.set('classId', selectedClassId);
+    } else {
+      localStorage.removeItem('app_selectedClassId');
+      url.searchParams.delete('classId');
+    }
+    window.history.replaceState({}, '', url.toString());
+  }, [selectedClassId]);
 
   useEffect(() => {
     // Inicializa Firebase ao carregar o app
     const success = initFirebase();
     if(success) {
       // Subscribe to classes
-      const unsub = subscribeToClasses((firebaseClasses) => {
-        // Only update if we have data, otherwise keep initial/mock data for first seed
+      const unsubClasses = subscribeToClasses((firebaseClasses) => {
         if (Object.keys(firebaseClasses).length > 0) {
-          isRemoteUpdate.current = true;
-          setClassData(firebaseClasses);
-        } else if (!hasLoaded.current) {
-          // If cloud is empty and we haven't loaded yet, we are in initial state.
-          // We can optionally save the mock data to cloud now?
-          // Let's save the initial mock data to the cloud so it's not empty next time
-          saveClassesToFirestore(initialClassData);
+          isRemoteClassUpdate.current = true;
+          
+          // Migration: If class 600 exists, replace it with 601, 602, 603, 604
+          let migratedClasses = { ...firebaseClasses };
+          let needsSave = false;
+          
+          if (migratedClasses["600"] && !migratedClasses["601"]) {
+            delete migratedClasses["600"];
+            migratedClasses["601"] = initialClassData["601"];
+            migratedClasses["602"] = initialClassData["602"];
+            migratedClasses["603"] = initialClassData["603"];
+            migratedClasses["604"] = initialClassData["604"];
+            needsSave = true;
+          }
+
+          // Migration for 09/03 attendance
+          const checkAndMergeAttendance = (classId: string) => {
+            if (migratedClasses[classId] && migratedClasses[classId].students) {
+              const has0903 = migratedClasses[classId].students.some(s => s.attendance && s.attendance["09/03"]);
+              if (!has0903) {
+                migratedClasses[classId].students = migratedClasses[classId].students.map(s => {
+                  const initialStudent = initialClassData[classId].students.find(is => is.name === s.name);
+                  if (initialStudent && initialStudent.attendance && initialStudent.attendance["09/03"]) {
+                    return {
+                      ...s,
+                      attendance: {
+                        ...s.attendance,
+                        "09/03": initialStudent.attendance["09/03"]
+                      }
+                    };
+                  }
+                  return s;
+                });
+                needsSave = true;
+              }
+            }
+          };
+
+          checkAndMergeAttendance("603");
+          checkAndMergeAttendance("604");
+          
+          if (needsSave) {
+            saveClassesToFirestore(migratedClasses);
+          }
+          setClassData(migratedClasses);
+        } else if (!hasLoadedClasses.current) {
+          // Se vazio no servidor, salva o inicial ou o que tem no local storage
+          const stored = localStorage.getItem('app_classData');
+          let dataToSave = stored ? JSON.parse(stored) : initialClassData;
+          
+          // Migration for local storage data
+          let needsSave = false;
+          if (dataToSave["600"] && !dataToSave["601"]) {
+            delete dataToSave["600"];
+            dataToSave["601"] = initialClassData["601"];
+            dataToSave["602"] = initialClassData["602"];
+            dataToSave["603"] = initialClassData["603"];
+            dataToSave["604"] = initialClassData["604"];
+            needsSave = true;
+          }
+
+          const checkAndMergeAttendanceLocal = (classId: string) => {
+            if (dataToSave[classId] && dataToSave[classId].students) {
+              const has0903 = dataToSave[classId].students.some((s: any) => s.attendance && s.attendance["09/03"]);
+              if (!has0903) {
+                dataToSave[classId].students = dataToSave[classId].students.map((s: any) => {
+                  const initialStudent = initialClassData[classId].students.find(is => is.name === s.name);
+                  if (initialStudent && initialStudent.attendance && initialStudent.attendance["09/03"]) {
+                    return {
+                      ...s,
+                      attendance: {
+                        ...s.attendance,
+                        "09/03": initialStudent.attendance["09/03"]
+                      }
+                    };
+                  }
+                  return s;
+                });
+                needsSave = true;
+              }
+            }
+          };
+
+          checkAndMergeAttendanceLocal("603");
+          checkAndMergeAttendanceLocal("604");
+          
+          saveClassesToFirestore(dataToSave);
+          setClassData(dataToSave);
         }
-        hasLoaded.current = true;
+        hasLoadedClasses.current = true;
       });
-      return () => unsub();
+
+      // Subscribe to activity log
+      const unsubActivity = subscribeToActivityLog((firebaseLog) => {
+        if (firebaseLog && firebaseLog.log && firebaseLog.log.length > 0) {
+          isRemoteActivityUpdate.current = true;
+          setActivityLogData(firebaseLog);
+        } else if (!hasLoadedActivities.current) {
+          const stored = localStorage.getItem('app_activityLogData');
+          const dataToSave = stored ? JSON.parse(stored) : initialActivityLogData;
+          saveActivityLogToFirestore(dataToSave);
+          setActivityLogData(dataToSave);
+        }
+        hasLoadedActivities.current = true;
+      });
+
+      return () => {
+        unsubClasses();
+        unsubActivity();
+      };
     }
   }, []);
 
-  // Sync back to Firebase when local state changes (and it wasn't a remote update)
-  useEffect(() => {
-    if (isRemoteUpdate.current) {
-      isRemoteUpdate.current = false;
-      return;
-    }
-    
-    // Check if we have data to save
-    if (hasLoaded.current && Object.keys(classData).length > 0) {
-       // Debounce or just save. For this app scale, direct save is fine.
-       // Ideally we use a debounce here.
-       const timer = setTimeout(() => {
-         saveClassesToFirestore(classData);
-       }, 500);
-       return () => clearTimeout(timer);
-    }
-  }, [classData]);
-
   // Hardware Back Button Handling
   useEffect(() => {
-    // Only handle popstate if logged in
-    if (!isLoggedIn) return;
-
     const handlePopState = (event: PopStateEvent) => {
       // Prevent default back behavior if we can handle it internally
       if (selectedClassId) {
-        event.preventDefault();
         setSelectedClassId(null);
+        window.history.pushState({ app: 'classes_grade' }, '', window.location.pathname);
       } else if (selectedGrade) {
-        event.preventDefault();
         setSelectedGrade(null);
+        window.history.pushState({ app: 'classes_home' }, '', window.location.pathname);
       } else if (currentView !== 'home') {
-        event.preventDefault();
         setView('home');
+        window.history.pushState({ app: 'home' }, '', window.location.pathname);
+      } else {
+        // If at home, push state again to prevent exiting the app
+        window.history.pushState({ app: 'home' }, '', window.location.pathname);
       }
-      // If at home, we let the browser go back (e.g. to previous website)
     };
 
     window.addEventListener('popstate', handlePopState);
     
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isLoggedIn, currentView, selectedGrade, selectedClassId]);
+  }, [currentView, selectedGrade, selectedClassId]);
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setSidebarOpen(false); // Reset sidebar state
-    setView('home');
-    // Add a history entry so Back button works to "logout" or stay in app
-    window.history.pushState({ app: 'home' }, '', window.location.pathname);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setSidebarOpen(false); // Reset sidebar state
-    setView('home'); // Reset view for next login
-    resetClassesNav();
-  };
-  
   const goBack = () => {
     if (selectedClassId) {
         setSelectedClassId(null);
@@ -406,6 +643,11 @@ const App: React.FC = () => {
     }
   };
 
+  const setViewWithHistory = (v: ViewState) => {
+    resetClassesNav(); 
+    setView(v);
+  };
+
   const resetClassesNav = () => {
     setSelectedGrade(null);
     setSelectedClassId(null);
@@ -413,7 +655,7 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch(currentView) {
-      case 'home': return <DashboardView setView={(v) => { resetClassesNav(); setView(v); }} />;
+      case 'home': return <DashboardView setView={setViewWithHistory} />;
       case 'statistics': return <StatisticsView classData={classData} onBack={goBack} />;
       case 'classes': return (
         <ClassesView 
@@ -424,6 +666,7 @@ const App: React.FC = () => {
           setSelectedGrade={setSelectedGrade}
           selectedClassId={selectedClassId}
           setSelectedClassId={setSelectedClassId}
+          onSave={handleSaveClasses}
         />
       );
       case 'activities': return (
@@ -432,6 +675,7 @@ const App: React.FC = () => {
           setData={setActivityLogData} 
           onBack={goBack}
           availableClasses={Object.values(classData).map((c: ClassData) => ({ id: c.id, name: c.name }))} 
+          onSave={handleSaveActivityLog}
         />
       );
       case 'tournaments': return <TournamentsView onBack={goBack} />;
@@ -440,7 +684,7 @@ const App: React.FC = () => {
       case 'exercises': return <ExercisesView onBack={goBack} />;
       case 'notation': return <NotationView onBack={goBack} />;
       case 'profile': return <Profile user={mockUserProfile} onBack={goBack} />;
-      default: return <DashboardView setView={setView} />;
+      default: return <DashboardView setView={setViewWithHistory} />;
     }
   };
 
@@ -471,12 +715,6 @@ const App: React.FC = () => {
       {/* Wrapper for Content + Footer */}
       <div className="flex-1 flex flex-col z-10">
         
-        {!isLoggedIn ? (
-          // Login View
-          <div className="flex-grow flex flex-col">
-            <Login onLogin={handleLogin} />
-          </div>
-        ) : (
           // Logged In App Structure
           <div className="flex-1 flex flex-col">
              
@@ -486,7 +724,6 @@ const App: React.FC = () => {
                onClose={() => setSidebarOpen(false)} 
                currentView={currentView}
                setView={(v) => { resetClassesNav(); setView(v); }}
-               logout={handleLogout}
              />
 
              {/* Header */}
@@ -522,7 +759,8 @@ const App: React.FC = () => {
                  )}
                </div>
                
-               <div className="ml-auto flex items-center">
+               <div className="ml-auto flex items-center gap-3">
+                  <SyncStatusIndicator status={syncStatus} />
                   {/* Weather Widget (Replaces Profile Button) */}
                   <WeatherWidget />
                </div>
@@ -536,7 +774,6 @@ const App: React.FC = () => {
              </main>
              
           </div>
-        )}
       </div>
 
       {/* Global Footer (Always visible) */}

@@ -2,7 +2,7 @@
 export interface Student {
   id: number;
   name: string;
-  attendance: { [date: string]: 'P' | 'F' | null };
+  attendance: { [date: string]: 'H1' | 'H2' | 'H3' | 'H4' | 'F' | null };
 }
 
 export interface ClassData {

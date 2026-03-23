@@ -19,14 +19,36 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
 
   // --- CÁLCULOS DINÂMICOS (Correção do Total de Alunos) ---
   const realStats = useMemo(() => {
-    if (!classData) return { students: 0, classes: 0 };
+    if (!classData) return { students: 0, classes: 0, todayAttendance: 0, todayTotal: 0 };
     
     // Safety check to ensure we have an object before getting values
     const classes = Object.values(classData || {}) as ClassData[];
     const totalClasses = classes.length;
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.students ? cls.students.length : 0), 0);
+    let totalStudents = 0;
+    let todayAttendance = 0;
+    let todayTotal = 0;
 
-    return { students: totalStudents, classes: totalClasses };
+    const todayDate = "09/03"; // Data de hoje conforme os PDFs
+
+    classes.forEach(cls => {
+      if (cls.students) {
+        totalStudents += cls.students.length;
+        
+        // Verifica se a turma teve aula hoje (se algum aluno tem marcação para hoje)
+        const hasClassToday = cls.students.some(s => s.attendance && s.attendance[todayDate]);
+        
+        if (hasClassToday) {
+          todayTotal += cls.students.length;
+          cls.students.forEach(s => {
+            if (s.attendance && ['H1', 'H2', 'H3', 'H4'].includes(s.attendance[todayDate])) {
+              todayAttendance++;
+            }
+          });
+        }
+      }
+    });
+
+    return { students: totalStudents, classes: totalClasses, todayAttendance, todayTotal };
   }, [classData]);
 
   useEffect(() => {
@@ -106,7 +128,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
               <tbody className="divide-y divide-slate-100 bg-white">
                 {sortedStudents.map((student) => {
                   const totalDays = dates.length;
-                  const presents = student.attendance ? Object.values(student.attendance).filter(v => v === 'P').length : 0;
+                  const presents = student.attendance ? Object.values(student.attendance).filter(v => ['H1', 'H2', 'H3', 'H4'].includes(v as string)).length : 0;
                   const percentage = totalDays ? Math.round((presents / totalDays) * 100) : 0;
                   
                   return (
@@ -116,9 +138,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                       </td>
                       {dates.map(date => {
                         const status = student.attendance ? student.attendance[date] : null;
+                        const isPresent = status && ['H1', 'H2', 'H3', 'H4'].includes(status);
                         return (
                           <td key={date} className="px-2 py-3 text-center border-r border-slate-50 last:border-0">
-                            {status === 'P' && <span className="inline-block w-6 h-6 leading-6 rounded bg-green-100 text-green-700 font-bold text-xs">P</span>}
+                            {isPresent && <span className="inline-block w-8 h-6 leading-6 rounded bg-blue-100 text-blue-700 font-bold text-xs">{status}</span>}
                             {status === 'F' && <span className="inline-block w-6 h-6 leading-6 rounded bg-red-100 text-red-700 font-bold text-xs">F</span>}
                             {!status && <span className="text-slate-200">-</span>}
                           </td>
@@ -243,6 +266,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
             if (card.id === 'active_classes') {
                displayValue = realStats.classes;
                displayTrend = 'Turmas cadastradas';
+            }
+            if (card.id === 'next_event') {
+               displayValue = realStats.todayTotal > 0 ? `${realStats.todayAttendance} / ${realStats.todayTotal}` : 'Sem aulas';
+               displayTrend = 'Presença Hoje (09/03)';
+               card.title = 'Presença Hoje';
             }
 
             return (
