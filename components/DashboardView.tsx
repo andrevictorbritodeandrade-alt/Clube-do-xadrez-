@@ -65,6 +65,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ setView }) => {
       action: () => setView('activities')
     },
     {
+      id: 'schedule',
+      title: 'Quadro de Horários',
+      description: 'Cronograma semanal das aulas.',
+      icon: '📅',
+      bgGradient: 'from-cyan-600 to-blue-700',
+      action: () => setView('schedule')
+    },
+    {
+      id: 'gallery',
+      title: 'Galeria',
+      description: 'Imagens e regras para a aula.',
+      icon: '🖼️',
+      bgGradient: 'from-rose-500 to-purple-600',
+      action: () => setView('gallery')
+    },
+    {
       id: 'ementa',
       title: 'Ementa do Xadrez',
       description: 'Conteúdo, Objetivos e Metodologia.',

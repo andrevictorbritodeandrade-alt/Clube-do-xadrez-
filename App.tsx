@@ -11,6 +11,7 @@ import { EmentaView } from './components/EmentaView';
 import { ExercisesView } from './components/ExercisesView';
 import { NotationView } from './components/NotationView';
 import { ScheduleView } from './components/ScheduleView';
+import { GalleryView } from './components/GalleryView';
 import { ActivityPrintModal } from './components/ActivityPrintModal';
 import { WeatherWidget } from './components/WeatherWidget'; // Import Widget
 import { ViewState, ClassDataMap, ActivityLogData, ClassData } from './types';
@@ -724,6 +725,7 @@ const App: React.FC = () => {
       case 'exercises': return <ExercisesView onBack={goBack} />;
       case 'notation': return <NotationView onBack={goBack} />;
       case 'schedule': return <ScheduleView onBack={goBack} />;
+      case 'gallery': return <GalleryView onBack={goBack} />;
       case 'profile': return <Profile user={mockUserProfile} onBack={goBack} />;
       default: return <DashboardView setView={setViewWithHistory} />;
     }
@@ -744,6 +746,7 @@ const App: React.FC = () => {
       case 'exercises': return 'Exercícios Táticos';
       case 'notation': return 'Notação Algébrica';
       case 'schedule': return 'Quadro de Horários';
+      case 'gallery': return 'Galeria';
       case 'profile': return 'Perfil';
       default: return 'Painel';
     }

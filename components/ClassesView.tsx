@@ -283,7 +283,22 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
           <h2 className="text-2xl font-black text-white uppercase tracking-tight drop-shadow-md">Turmas de {selectedGrade}º Ano</h2>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
+          <div className="glass-panel p-4 overflow-hidden rounded-2xl border border-white/20 shadow-xl">
+            <h4 className="text-slate-800 font-black uppercase tracking-tight mb-3 flex items-center px-2">
+              <span className="mr-2">📅</span> Quadro de Horários
+            </h4>
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-100">
+              <img 
+                src="https://ais-dev-3ggu3a6a2x6uszjtczam6k-70841264505.us-east1.run.app/schedule_board.png" 
+                alt="Quadro de Horários"
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map(cls => (
             <div 
               key={cls.id}
@@ -304,6 +319,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
           ))}
         </div>
       </div>
+    </div>
     );
   }
 

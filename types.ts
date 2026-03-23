@@ -104,7 +104,7 @@ export interface FirebaseConfig {
   measurementId?: string;
 }
 
-export type ViewState = 'home' | 'statistics' | 'classes' | 'tournaments' | 'activities' | 'play' | 'profile' | 'ementa' | 'exercises' | 'notation' | 'schedule';
+export type ViewState = 'home' | 'statistics' | 'classes' | 'tournaments' | 'activities' | 'play' | 'profile' | 'ementa' | 'exercises' | 'notation' | 'schedule' | 'gallery';
 
 // --- TOURNAMENT TYPES ---
 export interface Player {
