@@ -726,7 +726,16 @@ const App: React.FC = () => {
       case 'notation': return <NotationView onBack={goBack} />;
       case 'schedule': return <ScheduleView onBack={goBack} />;
       case 'gallery': return <GalleryView onBack={goBack} />;
-      case 'profile': return <Profile user={mockUserProfile} onBack={goBack} />;
+      case 'profile': return (
+        <Profile 
+          user={mockUserProfile} 
+          onBack={goBack} 
+          classData={classData}
+          setClassData={setClassData}
+          activityLogData={activityLogData}
+          setActivityLogData={setActivityLogData}
+        />
+      );
       default: return <DashboardView setView={setViewWithHistory} />;
     }
   };

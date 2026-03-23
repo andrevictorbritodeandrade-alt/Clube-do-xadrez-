@@ -1,12 +1,45 @@
 import React, { useState } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, ClassDataMap, ActivityLogData } from '../types';
+import { performAttendanceBackfill } from '../services/backfillService';
 
 interface ProfileProps {
   user: UserProfile;
   onBack: () => void;
+  classData: ClassDataMap;
+  setClassData: (data: ClassDataMap) => void;
+  activityLogData: ActivityLogData;
+  setActivityLogData: (data: ActivityLogData) => void;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ user, onBack }) => {
+export const Profile: React.FC<ProfileProps> = ({ 
+  user, 
+  onBack, 
+  classData, 
+  setClassData, 
+  activityLogData, 
+  setActivityLogData 
+}) => {
+  const [isBackfilling, setIsBackfilling] = useState(false);
+  const [backfillSuccess, setBackfillSuccess] = useState(false);
+
+  const handleBackfill = async () => {
+    if (window.confirm('Deseja realizar a sincronização automática de presenças para Fevereiro e Março? Isso preencherá as presenças de todas as turmas conforme solicitado.')) {
+      setIsBackfilling(true);
+      try {
+        const result = await performAttendanceBackfill(classData, activityLogData);
+        setClassData(result.newClasses);
+        setActivityLogData(result.newLog);
+        setBackfillSuccess(true);
+        setTimeout(() => setBackfillSuccess(false), 5000);
+      } catch (error) {
+        console.error("Erro ao realizar backfill:", error);
+        alert("Erro ao sincronizar presenças.");
+      } finally {
+        setIsBackfilling(false);
+      }
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
        <button 
@@ -37,7 +70,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, onBack }) => {
           </div>
 
           {/* Key Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-slate-50 p-4 rounded-lg text-center border border-slate-100">
               <span className="block text-slate-500 text-xs uppercase tracking-wider font-semibold">Rating ELO</span>
               <span className="block text-2xl font-black text-blue-600 mt-1">{user.elo}</span>
@@ -54,6 +87,30 @@ export const Profile: React.FC<ProfileProps> = ({ user, onBack }) => {
               <span className="block text-slate-500 text-xs uppercase tracking-wider font-semibold">Precisão</span>
               <span className="block text-2xl font-bold text-purple-600 mt-1">~82%</span>
             </div>
+          </div>
+
+          {/* Admin Actions */}
+          <div className="border-t border-slate-100 pt-6">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Ferramentas de Administrador</h3>
+            <div className="flex flex-wrap gap-3">
+              <button 
+                onClick={handleBackfill}
+                disabled={isBackfilling}
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95 ${
+                  backfillSuccess 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'
+                }`}
+              >
+                <svg className={`w-4 h-4 mr-2 ${isBackfilling ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {isBackfilling ? 'Sincronizando...' : backfillSuccess ? 'Presenças Sincronizadas!' : 'Sincronizar Presenças (Fev/Mar)'}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-2">
+              * Esta ação preencherá automaticamente as presenças de Fevereiro e Março conforme solicitado.
+            </p>
           </div>
         </div>
       </div>

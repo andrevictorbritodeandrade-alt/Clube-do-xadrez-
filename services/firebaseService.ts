@@ -2,11 +2,17 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, writeBatch, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseConfig, DashboardCardData, ClassDataMap, TournamentState, ActivityLogData } from '../types';
+import firebaseAppletConfig from '../firebase-applet-config.json';
 
 const CONFIG_KEY = 'chess_club_firebase_config';
 
 export const getStoredConfig = (): FirebaseConfig | null => {
-  // First try environment variables
+  // First try the applet config file
+  if (firebaseAppletConfig && firebaseAppletConfig.apiKey) {
+    return firebaseAppletConfig as FirebaseConfig;
+  }
+  
+  // Then try environment variables
   if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_PROJECT_ID) {
     return {
       apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
