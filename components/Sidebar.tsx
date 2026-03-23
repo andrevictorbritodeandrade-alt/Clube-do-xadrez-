@@ -72,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, setView
 
       {/* Sidebar Drawer */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white shadow-xl transform transition-transform duration-300 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

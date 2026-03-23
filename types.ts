@@ -141,3 +141,15 @@ export interface TournamentState {
   finalMatches: Match[];
   finalPlayers: string[];
 }
+
+export interface GalleryImage {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+  createdAt: number;
+}
+
+export interface GalleryData {
+  images: GalleryImage[];
+}

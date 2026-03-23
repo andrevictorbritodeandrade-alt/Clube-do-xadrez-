@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, writeBatch, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { FirebaseConfig, DashboardCardData, ClassDataMap, TournamentState, ActivityLogData } from '../types';
+import { FirebaseConfig, DashboardCardData, ClassDataMap, TournamentState, ActivityLogData, GalleryData } from '../types';
 import firebaseAppletConfig from '../firebase-applet-config.json';
 
 const CONFIG_KEY = 'chess_club_firebase_config';
@@ -201,4 +201,22 @@ export const subscribeToTournament = (callback: (data: TournamentState | null) =
 export const saveTournamentToFirestore = async (data: TournamentState) => {
   if (!db) return;
   await setDoc(doc(db, 'tournaments', 'active'), data);
+};
+
+// --- REAL-TIME GALLERY SYNC ---
+
+export const subscribeToGallery = (callback: (data: GalleryData | null) => void) => {
+  if (!db) return () => {};
+  return onSnapshot(doc(db, 'gallery', 'main'), (doc: any) => {
+    if (doc.exists()) {
+      callback(doc.data() as GalleryData);
+    } else {
+      callback(null);
+    }
+  });
+};
+
+export const saveGalleryToFirestore = async (data: GalleryData) => {
+  if (!db) return;
+  await setDoc(doc(db, 'gallery', 'main'), data);
 };

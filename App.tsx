@@ -14,9 +14,9 @@ import { ScheduleView } from './components/ScheduleView';
 import { GalleryView } from './components/GalleryView';
 import { ActivityPrintModal } from './components/ActivityPrintModal';
 import { WeatherWidget } from './components/WeatherWidget'; // Import Widget
-import { ViewState, ClassDataMap, ActivityLogData, ClassData } from './types';
+import { ViewState, ClassDataMap, ActivityLogData, ClassData, GalleryData } from './types';
 import { initialActivityLogData, mockUserProfile, initialClassData } from './constants';
-import { initFirebase, subscribeToClasses, saveClassesToFirestore, subscribeToActivityLog, saveActivityLogToFirestore } from './services/firebaseService';
+import { initFirebase, subscribeToClasses, saveClassesToFirestore, subscribeToActivityLog, saveActivityLogToFirestore, subscribeToGallery, saveGalleryToFirestore } from './services/firebaseService';
 
 // --- Global Footer Component ---
 const GlobalFooter = () => (
@@ -396,12 +396,18 @@ const App: React.FC = () => {
     const stored = localStorage.getItem('app_activityLogData');
     return stored ? JSON.parse(stored) : initialActivityLogData;
   });
+  const [galleryData, setGalleryData] = useState<GalleryData>(() => {
+    const stored = localStorage.getItem('app_galleryData');
+    return stored ? JSON.parse(stored) : { images: [] };
+  });
 
   // Persistence Refs
   const isRemoteClassUpdate = useRef(false);
   const hasLoadedClasses = useRef(false);
   const isRemoteActivityUpdate = useRef(false);
   const hasLoadedActivities = useRef(false);
+  const isRemoteGalleryUpdate = useRef(false);
+  const hasLoadedGallery = useRef(false);
 
   // Sync Status State
   const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'error'>('synced');
@@ -430,6 +436,18 @@ const App: React.FC = () => {
     }
   };
 
+  // Helper to save gallery explicitly
+  const handleSaveGallery = async (newData: GalleryData) => {
+    setSyncStatus('saving');
+    try {
+      await saveGalleryToFirestore(newData);
+      setSyncStatus('synced');
+    } catch (error) {
+      console.error("Erro ao salvar galeria:", error);
+      setSyncStatus('error');
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem('app_classData', JSON.stringify(classData));
     if (hasLoadedClasses.current) {
@@ -451,6 +469,17 @@ const App: React.FC = () => {
       }
     }
   }, [activityLogData]);
+
+  useEffect(() => {
+    localStorage.setItem('app_galleryData', JSON.stringify(galleryData));
+    if (hasLoadedGallery.current) {
+      if (isRemoteGalleryUpdate.current) {
+        isRemoteGalleryUpdate.current = false;
+      } else {
+        handleSaveGallery(galleryData);
+      }
+    }
+  }, [galleryData]);
 
   // State for Navigation within Classes
   const [selectedGrade, setSelectedGrade] = useState<string | null>(() => {
@@ -643,9 +672,26 @@ const App: React.FC = () => {
         hasLoadedActivities.current = true;
       });
 
+      // Subscribe to gallery
+      const unsubGallery = subscribeToGallery((firebaseGallery) => {
+        if (firebaseGallery && firebaseGallery.images) {
+          isRemoteGalleryUpdate.current = true;
+          setGalleryData(firebaseGallery);
+        } else if (!hasLoadedGallery.current) {
+          const stored = localStorage.getItem('app_galleryData');
+          if (stored) {
+            const dataToSave = JSON.parse(stored);
+            saveGalleryToFirestore(dataToSave);
+            setGalleryData(dataToSave);
+          }
+        }
+        hasLoadedGallery.current = true;
+      });
+
       return () => {
         unsubClasses();
         unsubActivity();
+        unsubGallery();
       };
     }
   }, []);
@@ -725,7 +771,13 @@ const App: React.FC = () => {
       case 'exercises': return <ExercisesView onBack={goBack} />;
       case 'notation': return <NotationView onBack={goBack} />;
       case 'schedule': return <ScheduleView onBack={goBack} />;
-      case 'gallery': return <GalleryView onBack={goBack} />;
+      case 'gallery': return (
+        <GalleryView 
+          onBack={goBack} 
+          data={galleryData} 
+          setData={setGalleryData} 
+        />
+      );
       case 'profile': return (
         <Profile 
           user={mockUserProfile} 
@@ -769,7 +821,6 @@ const App: React.FC = () => {
       {/* Wrapper for Content + Footer */}
       <div className="flex-1 flex flex-col z-10">
         
-          // Logged In App Structure
           <div className="flex-1 flex flex-col">
              
              {/* Sidebar */}
@@ -795,7 +846,10 @@ const App: React.FC = () => {
                  {currentView === 'home' ? (
                    // Logo no Header (Igual Login)
                    <div className="flex items-center gap-2 -ml-1">
-                      <span className="text-2xl md:text-3xl filter drop-shadow-md hover:scale-110 transition-transform cursor-default">♟️</span>
+                      <div className="flex items-center -space-x-2 filter drop-shadow-md hover:scale-110 transition-transform cursor-default">
+                        <span className="text-2xl md:text-3xl text-yellow-400">👑</span>
+                        <span className="text-2xl md:text-3xl text-pink-400">👸</span>
+                      </div>
                       <span className="text-lg md:text-2xl font-black uppercase tracking-wider animate-gradient-text leading-tight drop-shadow-sm">
                         Clube do Xadrez
                       </span>
