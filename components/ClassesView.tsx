@@ -295,6 +295,11 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
               {cls.schedule && (
                 <p className="text-blue-600 mt-1 text-sm font-bold">{cls.schedule}</p>
               )}
+              {cls.days && cls.days.length > 0 && (
+                <p className="text-slate-400 mt-1 text-[10px] font-bold uppercase tracking-wider">
+                  {cls.days.join(' • ')}
+                </p>
+              )}
             </div>
           ))}
         </div>
