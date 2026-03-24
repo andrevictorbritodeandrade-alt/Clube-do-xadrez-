@@ -13,15 +13,45 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
   const [loading, setLoading] = useState(true);
 
   // Drill Down State for History View
-  const [viewMode, setViewMode] = useState<'dashboard' | 'grade_select' | 'class_select' | 'details'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'grade_select' | 'class_select' | 'details' | 'full_report'>('dashboard');
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
-  // --- CÁLCULOS DINÂMICOS (Correção do Total de Alunos) ---
+  // --- CÁLCULOS DINÂMICOS ---
+  const classStats = useMemo(() => {
+    if (!classData) return [];
+    
+    return (Object.values(classData) as ClassData[]).map(cls => {
+      let totalPresents = 0;
+      let totalPossible = 0;
+      const studentStats = cls.students?.map(s => {
+        const presents = s.attendance ? Object.values(s.attendance).filter(v => v === 'P').length : 0;
+        const total = s.attendance ? Object.keys(s.attendance).length : 0;
+        totalPresents += presents;
+        totalPossible += total;
+        return {
+          id: s.id,
+          name: s.name,
+          presents,
+          total,
+          percentage: total > 0 ? Math.round((presents / total) * 100) : 0
+        };
+      }) || [];
+
+      return {
+        id: cls.id,
+        name: cls.name,
+        grade: cls.grade,
+        studentCount: cls.students?.length || 0,
+        avgAttendance: totalPossible > 0 ? Math.round((totalPresents / totalPossible) * 100) : 0,
+        students: studentStats
+      };
+    });
+  }, [classData]);
+
   const realStats = useMemo(() => {
     if (!classData) return { students: 0, classes: 0, todayAttendance: 0, todayTotal: 0 };
     
-    // Safety check to ensure we have an object before getting values
     const classes = Object.values(classData || {}) as ClassData[];
     const totalClasses = classes.length;
     let totalStudents = 0;
@@ -33,10 +63,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
     classes.forEach(cls => {
       if (cls.students) {
         totalStudents += cls.students.length;
-        
-        // Verifica se a turma teve aula hoje (se algum aluno tem marcação para hoje)
         const hasClassToday = cls.students.some(s => s.attendance && s.attendance[todayDate]);
-        
         if (hasClassToday) {
           todayTotal += cls.students.length;
           cls.students.forEach(s => {
@@ -87,7 +114,138 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
     });
   };
 
+  const getMonthName = (month: number) => {
+    const months = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    return months[month - 1] || 'Mês';
+  };
+
   // --- RENDER CONTENT ---
+
+  // 0. FULL REPORT VIEW
+  if (viewMode === 'full_report') {
+    // Calculate monthly average for the whole school
+    const monthlyStats: { [month: string]: { presents: number, total: number } } = {};
+    (Object.values(classData || {}) as ClassData[]).forEach(cls => {
+      cls.students?.forEach(s => {
+        if (s.attendance) {
+          Object.entries(s.attendance).forEach(([date, status]) => {
+            const month = date.split('/')[1];
+            if (!monthlyStats[month]) monthlyStats[month] = { presents: 0, total: 0 };
+            monthlyStats[month].total++;
+            if (status === 'P') monthlyStats[month].presents++;
+          });
+        }
+      });
+    });
+
+    const chartData = Object.keys(monthlyStats).sort((a, b) => Number(a) - Number(b)).map(month => ({
+      name: getMonthName(Number(month)),
+      percentage: Math.round((monthlyStats[month].presents / monthlyStats[month].total) * 100)
+    }));
+
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => setViewMode('dashboard')}
+              className="px-4 py-2 bg-slate-900/80 text-white rounded-full shadow-lg hover:bg-slate-800 text-sm font-bold transition flex items-center"
+            >
+              <span className="mr-2">⬅</span> Voltar
+            </button>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight drop-shadow-md">Relatório Geral Consolidado</h2>
+          </div>
+          <button 
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 text-sm font-bold transition flex items-center"
+          >
+            <span className="mr-2">🖨️</span> Imprimir Relatório
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="glass-panel p-6 border-l-4 border-blue-500">
+            <p className="text-xs font-bold text-slate-500 uppercase">Total de Alunos</p>
+            <p className="text-3xl font-black text-slate-800">{realStats.students}</p>
+          </div>
+          <div className="glass-panel p-6 border-l-4 border-purple-500">
+            <p className="text-xs font-bold text-slate-500 uppercase">Média de Frequência</p>
+            <p className="text-3xl font-black text-slate-800">
+              {classStats.length > 0 ? Math.round(classStats.reduce((acc, curr) => acc + curr.avgAttendance, 0) / classStats.length) : 0}%
+            </p>
+          </div>
+          <div className="glass-panel p-6 border-l-4 border-green-500">
+            <p className="text-xs font-bold text-slate-500 uppercase">Turmas Ativas</p>
+            <p className="text-3xl font-black text-slate-800">{realStats.classes}</p>
+          </div>
+        </div>
+
+        {/* Monthly Chart */}
+        <div className="glass-panel p-6 rounded-xl shadow-md bg-white">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 uppercase text-center">Desempenho de Frequência por Mês</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} domain={[0, 100]} />
+                <Tooltip cursor={{fill: '#f8fafc'}} />
+                <Bar dataKey="percentage" fill="#3b82f6" name="Frequência %" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="glass-panel overflow-hidden rounded-xl shadow-lg bg-white">
+          <div className="p-4 bg-slate-50 border-b border-slate-100">
+            <h3 className="font-bold text-slate-800 uppercase text-sm">Resumo por Turma</h3>
+          </div>
+          <table className="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-800 text-white uppercase text-[10px] font-bold">
+                <th className="px-6 py-4">Turma</th>
+                <th className="px-6 py-4">Série</th>
+                <th className="px-6 py-4 text-center">Total Alunos</th>
+                <th className="px-6 py-4 text-center">Frequência Média</th>
+                <th className="px-6 py-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {classStats.sort((a,b) => a.name.localeCompare(b.name)).map(stat => (
+                <tr key={stat.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-black text-slate-800">{stat.name}</td>
+                  <td className="px-6 py-4 text-slate-600 font-medium">{stat.grade}º Ano</td>
+                  <td className="px-6 py-4 text-center font-bold text-slate-700">{stat.studentCount}</td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-16 bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full ${stat.avgAttendance > 80 ? 'bg-green-500' : stat.avgAttendance > 50 ? 'bg-blue-500' : 'bg-red-500'}`}
+                          style={{ width: `${stat.avgAttendance}%` }}
+                        ></div>
+                      </div>
+                      <span className="font-bold text-slate-800">{stat.avgAttendance}%</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button 
+                      onClick={() => { setSelectedClassId(stat.id); setViewMode('details'); }}
+                      className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors"
+                    >
+                      Ver Detalhes
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   // 1. DETAIL VIEW (The Historical Matrix)
   if (viewMode === 'details' && selectedClassId && classData) {
@@ -95,37 +253,64 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
     if (!currentClass) return <div>Erro ao carregar turma</div>;
     
     const dates = getUniqueDates(currentClass);
+    // Group dates by month
+    const groupedDates: { [month: string]: string[] } = {};
+    dates.forEach(date => {
+      const month = date.split('/')[1];
+      if (!groupedDates[month]) groupedDates[month] = [];
+      groupedDates[month].push(date);
+    });
+
+    const sortedMonths = Object.keys(groupedDates).sort((a, b) => Number(a) - Number(b));
+
     // Sort students alphabetically
     const sortedStudents = currentClass.students ? [...currentClass.students].sort((a, b) => a.name.localeCompare(b.name)) : [];
 
     return (
       <div className="space-y-4 animate-fade-in">
-        <div className="flex items-center space-x-4 mb-4">
-          <button 
-            onClick={() => setViewMode('class_select')}
-            className="px-4 py-2 bg-slate-900/80 text-white rounded-full shadow-lg hover:bg-slate-800 text-sm font-bold transition flex items-center"
-          >
-            <span className="mr-2">⬅</span> Voltar
-          </button>
-          <div>
-            <h2 className="text-xl font-black text-white uppercase drop-shadow-md">Histórico: {currentClass.name}</h2>
-            <p className="text-sm text-slate-200 drop-shadow-sm">Visualização detalhada dia a dia</p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => setViewMode(selectedGrade ? 'class_select' : 'full_report')}
+              className="px-4 py-2 bg-slate-900/80 text-white rounded-full shadow-lg hover:bg-slate-800 text-sm font-bold transition flex items-center"
+            >
+              <span className="mr-2">⬅</span> Voltar
+            </button>
+            <div>
+              <h2 className="text-xl font-black text-white uppercase drop-shadow-md">Histórico: {currentClass.name}</h2>
+              <p className="text-sm text-slate-200 drop-shadow-sm">Total de Alunos: {currentClass.students?.length || 0}</p>
+            </div>
           </div>
+          <button 
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 text-sm font-bold transition"
+          >
+            🖨️ Imprimir Turma
+          </button>
         </div>
 
-        <div className="glass-panel p-0 overflow-hidden rounded-xl shadow-md">
+        <div className="glass-panel p-0 overflow-hidden rounded-xl shadow-md bg-white">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-sm text-left border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-slate-700 uppercase text-xs font-bold border-b border-slate-200">
-                  <th className="px-4 py-3 sticky left-0 bg-slate-100 z-10 shadow-sm border-r border-slate-200 min-w-[200px]">Nome do Aluno</th>
-                  {dates.map(date => (
-                    <th key={date} className="px-3 py-3 text-center min-w-[60px] whitespace-nowrap">{date}</th>
+                <tr className="bg-slate-800 text-white uppercase text-[10px] font-bold">
+                  <th rowSpan={2} className="px-4 py-3 sticky left-0 bg-slate-800 z-20 border-r border-slate-700 min-w-[220px]">Nome do Aluno</th>
+                  {sortedMonths.map(month => (
+                    <th key={month} colSpan={groupedDates[month].length} className="px-3 py-2 text-center border-r border-slate-700 bg-slate-700">
+                      {getMonthName(Number(month))}
+                    </th>
                   ))}
-                  <th className="px-4 py-3 text-center bg-slate-100 font-black text-blue-600 border-l border-slate-200">Total %</th>
+                  <th rowSpan={2} className="px-4 py-3 text-center bg-blue-900 z-10 border-l border-slate-700">Resumo %</th>
+                </tr>
+                <tr className="bg-slate-100 text-slate-600 text-[9px] font-black border-b border-slate-200">
+                  {sortedMonths.map(month => (
+                    groupedDates[month].map(date => (
+                      <th key={date} className="px-1 py-2 text-center min-w-[40px] border-r border-slate-200">{date.split('/')[0]}</th>
+                    ))
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-slate-100">
                 {sortedStudents.map((student) => {
                   const totalDays = dates.length;
                   const presents = student.attendance ? Object.values(student.attendance).filter(v => v === 'P').length : 0;
@@ -133,21 +318,23 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                   
                   return (
                     <tr key={student.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                      <td className="px-4 py-2.5 font-bold text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-xs">
                         {student.name}
                       </td>
-                      {dates.map(date => {
-                        const status = student.attendance ? student.attendance[date] : null;
-                        const isPresent = status === 'P';
-                        return (
-                          <td key={date} className="px-2 py-3 text-center border-r border-slate-50 last:border-0">
-                            {isPresent && <span className="inline-block w-8 h-6 leading-6 rounded bg-blue-100 text-blue-700 font-bold text-xs">P</span>}
-                            {status === 'F' && <span className="inline-block w-6 h-6 leading-6 rounded bg-red-100 text-red-700 font-bold text-xs">F</span>}
-                            {!status && <span className="text-slate-200">-</span>}
-                          </td>
-                        );
-                      })}
-                      <td className="px-4 py-3 text-center font-bold text-blue-600 border-l border-slate-100 bg-slate-50/50">
+                      {sortedMonths.map(month => (
+                        groupedDates[month].map(date => {
+                          const status = student.attendance ? student.attendance[date] : null;
+                          const isPresent = status === 'P';
+                          return (
+                            <td key={date} className="px-1 py-2 text-center border-r border-slate-50 last:border-0">
+                              {isPresent && <span className="text-blue-600 font-black">P</span>}
+                              {status === 'F' && <span className="text-red-500 font-black">F</span>}
+                              {!status && <span className="text-slate-200">-</span>}
+                            </td>
+                          );
+                        })
+                      ))}
+                      <td className={`px-4 py-2.5 text-center font-black border-l border-slate-100 bg-slate-50/50 text-xs ${percentage > 80 ? 'text-green-600' : percentage > 50 ? 'text-blue-600' : 'text-red-500'}`}>
                         {percentage}%
                       </td>
                     </tr>
@@ -157,7 +344,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
             </table>
           </div>
           {dates.length === 0 && (
-            <div className="p-8 text-center text-slate-400 font-medium">
+            <div className="p-12 text-center text-slate-400 font-medium">
               Nenhuma chamada realizada nesta turma ainda.
             </div>
           )}
@@ -294,14 +481,32 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
       )}
 
       {/* Button to Drill Down */}
-      <div className="glass-panel p-8 rounded-xl shadow-md border-l-8 border-blue-600 flex flex-col md:flex-row items-center justify-between gap-6 cursor-pointer hover:bg-white/80 transition" onClick={() => setViewMode('grade_select')}>
-         <div>
-            <h3 className="text-2xl font-black text-slate-800 uppercase">Relatórios Detalhados de Frequência</h3>
-            <p className="text-slate-500 font-medium">Acesse o histórico completo dia-a-dia de presença e falta de cada aluno por turma.</p>
-         </div>
-         <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-         </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div 
+          className="glass-panel p-8 rounded-xl shadow-md border-l-8 border-blue-600 flex items-center justify-between cursor-pointer hover:bg-white/80 transition group" 
+          onClick={() => setViewMode('full_report')}
+        >
+          <div>
+            <h3 className="text-xl font-black text-slate-800 uppercase">Relatório Geral Consolidado</h3>
+            <p className="text-slate-500 text-sm font-medium">Visão macro de todas as turmas, total de alunos e médias.</p>
+          </div>
+          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 00-4-4H5m11 2a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+          </div>
+        </div>
+
+        <div 
+          className="glass-panel p-8 rounded-xl shadow-md border-l-8 border-purple-600 flex items-center justify-between cursor-pointer hover:bg-white/80 transition group" 
+          onClick={() => setViewMode('grade_select')}
+        >
+          <div>
+            <h3 className="text-xl font-black text-slate-800 uppercase">Histórico por Aluno</h3>
+            <p className="text-slate-500 text-sm font-medium">Acesse a frequência individual detalhada dia a dia.</p>
+          </div>
+          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+        </div>
       </div>
 
       {/* General Chart */}
