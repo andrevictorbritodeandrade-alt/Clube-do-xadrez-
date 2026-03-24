@@ -20,29 +20,15 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ onBack, data, setData 
     {
       id: 'schedule',
       title: 'Quadro de Horários',
-      url: '/quadro_horarios.png',
+      url: '/quadro.jpg',
       description: 'Cronograma semanal das aulas de Xadrez.',
       createdAt: Date.now()
     },
     {
-      id: 'abc',
-      title: 'O ABC do Xadrez',
-      url: '/abc_xadrez.png',
-      description: 'Movimentos, regras básicas e notação.',
-      createdAt: Date.now()
-    },
-    {
       id: 'rules_vibrant',
-      title: 'Regras da Aula (Colorido)',
-      url: '/regras_vibrante.png',
+      title: 'Regras da Aula',
+      url: '/regras-aula.jpg',
       description: 'Silêncio absoluto e regras de vitória.',
-      createdAt: Date.now()
-    },
-    {
-      id: 'rules_brown',
-      title: 'Regras da Sala (Clássico)',
-      url: '/regras_marrom.png',
-      description: 'Proibições e combinados em Libras.',
       createdAt: Date.now()
     }
   ];

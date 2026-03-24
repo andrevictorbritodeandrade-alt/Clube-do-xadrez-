@@ -290,7 +290,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
             </h4>
             <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-100">
               <img 
-                src="/quadro_horarios.png" 
+                src="/quadro.jpg" 
                 alt="Quadro de Horários"
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"

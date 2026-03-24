@@ -21,7 +21,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ onBack }) => {
       <div className="glass-panel p-4 overflow-hidden rounded-2xl shadow-2xl border border-white/20">
         <div className="relative aspect-video w-full overflow-hidden rounded-xl">
           <img 
-            src="/quadro_horarios.png" 
+            src="/quadro.jpg" 
             alt="Quadro de Horários - Xadrez"
             className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
