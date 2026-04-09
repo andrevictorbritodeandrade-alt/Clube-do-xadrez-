@@ -18,17 +18,17 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ onBack, data, setData 
 
   const defaultImages: GalleryImage[] = [
     {
-      id: 'schedule',
-      title: 'Quadro de Horários',
-      url: '/quadro.jpg',
-      description: 'Cronograma semanal das aulas de Xadrez.',
+      id: 'chess_class',
+      title: 'Aula de Xadrez com a Turma 602',
+      url: 'https://images.unsplash.com/photo-1580541832626-2a7131ee809f?q=80&w=3870&auto=format&fit=crop',
+      description: 'Professor André e alunos do 6º ano em plena atividade.',
       createdAt: Date.now()
     },
     {
-      id: 'rules_vibrant',
-      title: 'Regras da Aula',
-      url: '/regras-aula.jpg',
-      description: 'Silêncio absoluto e regras de vitória.',
+      id: 'famous_mate',
+      title: 'Mate em Dois Famoso',
+      url: 'https://images.unsplash.com/photo-1528819622765-d6bcf132f793?q=80&w=3870&auto=format&fit=crop',
+      description: 'Posição clássica de xeque-mate em dois lances.',
       createdAt: Date.now()
     }
   ];

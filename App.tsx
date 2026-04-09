@@ -20,17 +20,17 @@ import { initFirebase, subscribeToClasses, saveClassesToFirestore, subscribeToAc
 
 // --- Global Footer Component ---
 const GlobalFooter = () => (
-  <footer className="w-full py-4 md:py-6 text-center relative z-50 shrink-0 mt-auto">
-    <div className="container mx-auto px-4">
-      <h3 className="font-black text-[10px] md:text-sm tracking-widest uppercase mb-1 text-white whitespace-nowrap drop-shadow-md">
-        CLUBE DO XADREZ - Gestão das aulas de Xadrez
-      </h3>
-      <p className="text-[10px] md:text-xs font-semibold text-slate-200 drop-shadow-sm">Desenvolvido por André Brito</p>
-      <div className="mt-2">
-         <span className="text-[10px] md:text-xs font-bold text-white bg-black/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 shadow-sm">
-           📱 21 994 527 694
-         </span>
-      </div>
+  <footer className="w-full py-6 text-center relative z-50 shrink-0 mt-auto bg-black/30 backdrop-blur-md border-t border-white/10">
+    <div className="container mx-auto px-4 flex flex-col items-center gap-1">
+      <p className="text-[10px] md:text-xs font-bold text-white drop-shadow-md">
+        Desenvolvido por: André Victor Brito de Andrade
+      </p>
+      <p className="text-[10px] md:text-xs font-medium text-slate-300">
+        Contato: andrevictorbritodeandrade@gmail.com
+      </p>
+      <p className="text-[10px] md:text-xs font-medium text-slate-400">
+        versão: 1.0
+      </p>
     </div>
   </footer>
 );
@@ -578,6 +578,10 @@ const App: React.FC = () => {
               }
 
               if (classChanged) needsSave = true;
+            } else {
+              // Add missing class from initial data
+              migratedClasses[id] = initialClassData[id];
+              needsSave = true;
             }
           });
 
@@ -626,6 +630,14 @@ const App: React.FC = () => {
             dataToSave["604"] = initialClassData["604"];
             needsSave = true;
           }
+
+          // Add missing classes from initialData (like 7th grade)
+          Object.keys(initialClassData).forEach(id => {
+            if (!dataToSave[id]) {
+              dataToSave[id] = initialClassData[id];
+              needsSave = true;
+            }
+          });
 
           const checkAndMergeAttendanceLocal = (classId: string) => {
             if (dataToSave[classId] && dataToSave[classId].students) {

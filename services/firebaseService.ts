@@ -44,8 +44,11 @@ export const saveConfig = (config: FirebaseConfig) => {
 let db: any = null;
 let app: any = null;
 let auth: any = null;
+let persistenceEnabled = false;
 
 export const initFirebase = () => {
+  if (db && auth) return true;
+
   const config = getStoredConfig();
   if (!config) {
     console.warn("Firebase config not found in localStorage.");
@@ -58,19 +61,30 @@ export const initFirebase = () => {
     } else {
       app = getApp();
     }
-    db = getFirestore(app);
-    auth = getAuth(app);
-
-    // Enable offline persistence
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
-      } else if (err.code === 'unimplemented') {
-        console.warn("The current browser does not support all of the features required to enable persistence.");
+    
+    if (!db) {
+      db = getFirestore(app);
+      
+      // Enable offline persistence - only once
+      if (!persistenceEnabled) {
+        persistenceEnabled = true;
+        enableIndexedDbPersistence(db).catch((err) => {
+          if (err.code === 'failed-precondition') {
+            console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
+          } else if (err.code === 'unimplemented') {
+            console.warn("The current browser does not support all of the features required to enable persistence.");
+          } else {
+            console.error("Persistence error:", err);
+          }
+        });
       }
-    });
+    }
 
-    signInAnonymously(auth).catch((err) => console.error("Auth Error:", err));
+    if (!auth) {
+      auth = getAuth(app);
+      signInAnonymously(auth).catch((err) => console.error("Auth Error:", err));
+    }
+    
     return true;
   } catch (e) {
     console.error("Erro ao iniciar Firebase", e);

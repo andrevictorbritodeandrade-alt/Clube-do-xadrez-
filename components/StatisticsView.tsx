@@ -58,7 +58,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
     let todayAttendance = 0;
     let todayTotal = 0;
 
-    const todayDate = "09/03"; // Data de hoje conforme os PDFs
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const todayDate = `${day}/${month}`;
 
     classes.forEach(cls => {
       if (cls.students) {
@@ -120,6 +123,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
     ];
     return months[month - 1] || 'Mês';
+  };
+
+  const isHoliday = (date: string) => {
+    const holidays = ["13/02", "19/02", "20/02"];
+    return holidays.includes(date);
   };
 
   // --- RENDER CONTENT ---
@@ -289,6 +297,46 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
           </button>
         </div>
 
+        <div className="glass-panel p-6 rounded-xl shadow-md bg-white mb-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 uppercase tracking-tight">Desempenho Individual (%)</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={sortedStudents.map(s => {
+                const totalDays = dates.length;
+                const presents = s.attendance ? Object.values(s.attendance).filter(v => v === 'P').length : 0;
+                return {
+                  name: s.name.split(' ')[0],
+                  fullName: s.name,
+                  percentage: totalDays ? Math.round((presents / totalDays) * 100) : 0
+                };
+              })}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} domain={[0, 100]} />
+                <Tooltip 
+                  cursor={{fill: '#f1f5f9'}} 
+                  contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
+                  formatter={(value: number) => [`${value}%`, 'Frequência']}
+                  labelFormatter={(label, payload) => payload[0]?.payload?.fullName || label}
+                />
+                <Bar dataKey="percentage" radius={[4, 4, 0, 0]}>
+                  {sortedStudents.map((s, index) => {
+                    const totalDays = dates.length;
+                    const presents = s.attendance ? Object.values(s.attendance).filter(v => v === 'P').length : 0;
+                    const percentage = totalDays ? Math.round((presents / totalDays) * 100) : 0;
+                    return (
+                      <rect 
+                        key={`cell-student-${index}`} 
+                        fill={percentage > 80 ? '#22c55e' : percentage > 50 ? '#3b82f6' : '#ef4444'} 
+                      />
+                    );
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
         <div className="glass-panel p-0 overflow-hidden rounded-xl shadow-md bg-white">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-sm text-left border-collapse">
@@ -300,12 +348,19 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                       {getMonthName(Number(month))}
                     </th>
                   ))}
-                  <th rowSpan={2} className="px-4 py-3 text-center bg-blue-900 z-10 border-l border-slate-700">Resumo %</th>
+                  <th rowSpan={2} className="px-3 py-3 text-center bg-slate-700 z-10 border-l border-slate-600 min-w-[50px]">Total</th>
+                  <th rowSpan={2} className="px-3 py-3 text-center bg-blue-900 z-10 border-l border-slate-700 min-w-[60px]">Pres.</th>
+                  <th rowSpan={2} className="px-3 py-3 text-center bg-red-900 z-10 border-l border-slate-700 min-w-[60px]">Faltas</th>
+                  <th rowSpan={2} className="px-3 py-3 text-center bg-indigo-900 z-10 border-l border-slate-700 min-w-[80px]">% Pres.</th>
+                  <th rowSpan={2} className="px-3 py-3 text-center bg-rose-900 z-10 border-l border-slate-700 min-w-[80px]">% Faltas</th>
                 </tr>
                 <tr className="bg-slate-100 text-slate-600 text-[9px] font-black border-b border-slate-200">
                   {sortedMonths.map(month => (
                     groupedDates[month].map(date => (
-                      <th key={date} className="px-1 py-2 text-center min-w-[40px] border-r border-slate-200">{date.split('/')[0]}</th>
+                      <th key={date} className={`px-1 py-2 text-center min-w-[40px] border-r border-slate-200 ${isHoliday(date) ? 'bg-amber-100 text-amber-800' : ''}`}>
+                        {date.split('/')[0]}
+                        {isHoliday(date) && <div className="text-[8px] leading-none mt-0.5">REC</div>}
+                      </th>
                     ))
                   ))}
                 </tr>
@@ -314,7 +369,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                 {sortedStudents.map((student) => {
                   const totalDays = dates.length;
                   const presents = student.attendance ? Object.values(student.attendance).filter(v => v === 'P').length : 0;
-                  const percentage = totalDays ? Math.round((presents / totalDays) * 100) : 0;
+                  const absences = student.attendance ? Object.values(student.attendance).filter(v => v === 'F').length : 0;
+                  const percentageP = totalDays ? Math.round((presents / totalDays) * 100) : 0;
+                  const percentageF = totalDays ? Math.round((absences / totalDays) * 100) : 0;
                   
                   return (
                     <tr key={student.id} className="hover:bg-slate-50 transition-colors">
@@ -325,17 +382,36 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                         groupedDates[month].map(date => {
                           const status = student.attendance ? student.attendance[date] : null;
                           const isPresent = status === 'P';
+                          const holiday = isHoliday(date);
                           return (
-                            <td key={date} className="px-1 py-2 text-center border-r border-slate-50 last:border-0">
-                              {isPresent && <span className="text-blue-600 font-black">P</span>}
-                              {status === 'F' && <span className="text-red-500 font-black">F</span>}
-                              {!status && <span className="text-slate-200">-</span>}
+                            <td key={date} className={`px-1 py-2 text-center border-r border-slate-50 last:border-0 ${holiday ? 'bg-amber-50/50' : ''}`}>
+                              {holiday ? (
+                                <span className="text-amber-500 font-black text-[10px]" title="Recesso/Ponto Facultativo">R</span>
+                              ) : (
+                                <>
+                                  {isPresent && <span className="text-blue-600 font-black">P</span>}
+                                  {status === 'F' && <span className="text-red-500 font-black">F</span>}
+                                  {!status && <span className="text-slate-200">-</span>}
+                                </>
+                              )}
                             </td>
                           );
                         })
                       ))}
-                      <td className={`px-4 py-2.5 text-center font-black border-l border-slate-100 bg-slate-50/50 text-xs ${percentage > 80 ? 'text-green-600' : percentage > 50 ? 'text-blue-600' : 'text-red-500'}`}>
-                        {percentage}%
+                      <td className="px-3 py-2.5 text-center font-bold border-l border-slate-100 bg-slate-50 text-slate-600 text-xs">
+                        {totalDays}
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-bold border-l border-slate-100 bg-blue-50/30 text-blue-700 text-xs">
+                        {presents}
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-bold border-l border-slate-100 bg-red-50/30 text-red-700 text-xs">
+                        {absences}
+                      </td>
+                      <td className={`px-3 py-2.5 text-center font-black border-l border-slate-100 bg-slate-50/50 text-xs ${percentageP > 80 ? 'text-green-600' : percentageP > 50 ? 'text-blue-600' : 'text-red-500'}`}>
+                        {percentageP}%
+                      </td>
+                      <td className={`px-3 py-2.5 text-center font-black border-l border-slate-100 bg-slate-50/50 text-xs ${percentageF < 20 ? 'text-green-600' : percentageF < 50 ? 'text-blue-600' : 'text-red-500'}`}>
+                        {percentageF}%
                       </td>
                     </tr>
                   );
@@ -431,9 +507,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
       {/* Header Info */}
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider drop-shadow-sm">Painel Geral</h2>
-        <span className="text-xs text-green-600 flex items-center bg-green-100 px-2 py-1 rounded-full">
+        <span className="text-[10px] font-bold text-green-600 flex items-center bg-green-100 px-3 py-1 rounded-full shadow-sm border border-green-200">
           <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-          Conectado
+          SINCRONIZADO COM A NUVEM
         </span>
       </div>
 
@@ -455,8 +531,13 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
                displayTrend = 'Turmas cadastradas';
             }
             if (card.id === 'next_event') {
+               const today = new Date();
+               const day = today.getDate().toString().padStart(2, '0');
+               const month = (today.getMonth() + 1).toString().padStart(2, '0');
+               const todayStr = `${day}/${month}`;
+               
                displayValue = realStats.todayTotal > 0 ? `${realStats.todayAttendance} / ${realStats.todayTotal}` : 'Sem aulas';
-               displayTrend = 'Presença Hoje (09/03)';
+               displayTrend = `Presença Hoje (${todayStr})`;
                card.title = 'Presença Hoje';
             }
 
@@ -509,25 +590,31 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ classData, onBac
         </div>
       </div>
 
-      {/* General Chart */}
+      {/* Class Attendance Chart */}
       <div className="glass-panel p-6 rounded-xl shadow-md border border-white/50">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Frequência Mensal Geral (Exemplo)</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-4 uppercase tracking-tight">Frequência Média por Turma (%)</h3>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={[
-              { name: 'Jan', vitorias: 12, derrotas: 4 },
-              { name: 'Fev', vitorias: 19, derrotas: 8 },
-              { name: 'Mar', vitorias: 35, derrotas: 12 },
-              { name: 'Abr', vitorias: 22, derrotas: 15 },
-              { name: 'Mai', vitorias: 40, derrotas: 10 },
-            ]}>
+            <BarChart data={classStats.sort((a,b) => a.name.localeCompare(b.name)).map(s => ({
+              name: s.name.replace('Turma ', ''),
+              percentage: s.avgAttendance
+            }))}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-              <Tooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} />
-              <Legend />
-              <Bar dataKey="vitorias" fill="#4F46E5" name="Presentes" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="derrotas" fill="#e2e8f0" name="Ausentes" radius={[4, 4, 0, 0]} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12, fontWeight: 'bold'}} />
+              <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} domain={[0, 100]} />
+              <Tooltip 
+                cursor={{fill: '#f1f5f9'}} 
+                contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
+                formatter={(value: number) => [`${value}%`, 'Frequência']}
+              />
+              <Bar dataKey="percentage" radius={[4, 4, 0, 0]}>
+                {classStats.map((entry, index) => (
+                  <rect 
+                    key={`cell-${index}`} 
+                    fill={entry.avgAttendance > 80 ? '#22c55e' : entry.avgAttendance > 50 ? '#3b82f6' : '#ef4444'} 
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -269,7 +269,7 @@ export const initialClassData: ClassDataMap = {
     name: "Turma 601", 
     grade: "6", 
     students: createStudents(students601Raw, "601"),
-    schedule: "08:00 - 09:00",
+    schedule: "09:50 - 11:00",
     days: ["Sexta"]
   },
   "602": { 
@@ -277,15 +277,15 @@ export const initialClassData: ClassDataMap = {
     name: "Turma 602", 
     grade: "6", 
     students: createStudents(students602Raw, "602"),
-    schedule: "09:00 - 09:30",
-    days: ["Segunda"]
+    schedule: "08:00 - 09:00 / 11:00 - 11:30",
+    days: ["Segunda", "Sexta"]
   },
   "603": { 
     id: "603", 
     name: "Turma 603", 
     grade: "6", 
     students: createStudents(students603Raw, "603"),
-    schedule: "09:50 - 11:00",
+    schedule: "09:00 - 09:30 / 09:50 - 11:00",
     days: ["Segunda", "Quinta", "Sexta"]
   },
   "604": { 
@@ -293,8 +293,56 @@ export const initialClassData: ClassDataMap = {
     name: "Turma 604", 
     grade: "6", 
     students: createStudents(students604Raw, "604"),
-    schedule: "11:00 - 11:30",
+    schedule: "09:00 - 11:00 / 08:00 - 09:00",
     days: ["Segunda", "Sexta"]
+  },
+  "711": { 
+    id: "711", 
+    name: "Turma 711", 
+    grade: "7", 
+    students: generateStudents(20),
+    schedule: "16:00 - 16:50",
+    days: ["Terça"]
+  },
+  "712": { 
+    id: "712", 
+    name: "Turma 712", 
+    grade: "7", 
+    students: generateStudents(20),
+    schedule: "14:00 - 15:00",
+    days: ["Terça", "Quinta"]
+  },
+  "713": { 
+    id: "713", 
+    name: "Turma 713", 
+    grade: "7", 
+    students: generateStudents(20),
+    schedule: "15:00 - 16:00",
+    days: ["Terça", "Quinta"]
+  },
+  "721": { 
+    id: "721", 
+    name: "Turma 721", 
+    grade: "7", 
+    students: generateStudents(20),
+    schedule: "13:00 - 14:00",
+    days: ["Quarta", "Sexta"]
+  },
+  "722": { 
+    id: "722", 
+    name: "Turma 722", 
+    grade: "7", 
+    students: generateStudents(20),
+    schedule: "14:00 - 15:00",
+    days: ["Quarta", "Sexta"]
+  },
+  "723": { 
+    id: "723", 
+    name: "Turma 723", 
+    grade: "7", 
+    students: generateStudents(20),
+    schedule: "15:00 - 16:00",
+    days: ["Quarta", "Sexta"]
   }
 };
 
@@ -320,6 +368,30 @@ export const initialActivityLogData: ActivityLogData = {
     project: "PROJETO DE INICIAÇÃO AO XADREZ",
   },
   log: [
+    { 
+      date: "13/fev", 
+      classes: ["601", "602", "603", "604"], 
+      activities: [
+        "Ponto Facultativo - Recesso Escolar (Sexta-feira antes do Carnaval).",
+        "Justificado na folha de atividades."
+      ] 
+    },
+    { 
+      date: "19/fev", 
+      classes: ["601", "602", "603", "604"], 
+      activities: [
+        "Recesso de Carnaval - Quinta-feira.",
+        "Justificado na folha de atividades."
+      ] 
+    },
+    { 
+      date: "20/fev", 
+      classes: ["601", "602", "603", "604"], 
+      activities: [
+        "Recesso de Carnaval - Sexta-feira.",
+        "Justificado na folha de atividades."
+      ] 
+    },
     { 
       date: "19/mar", 
       classes: ["601", "602"], 

@@ -50,10 +50,10 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
     return `${year}-${month}-${day}`;
   };
 
-  const [selectedDate, setSelectedDate] = useState(() => {
-    return localStorage.getItem('app_selectedDate') || getTodayISO();
-  });
+  const [selectedDate, setSelectedDate] = useState(getTodayISO());
 
+  // Sincroniza com localStorage apenas para persistir durante a sessão se necessário, 
+  // mas o estado inicial agora é sempre hoje ao montar o componente.
   useEffect(() => {
     localStorage.setItem('app_selectedDate', selectedDate);
   }, [selectedDate]);
@@ -86,6 +86,9 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
   const handleAttendance = (studentId: number, status: 'P' | 'F') => {
     if (!selectedClassId) return;
 
+    // Feedback visual de "Salvando..."
+    setIsSaving(true);
+
     setClassData((prev) => {
       const newData = { ...prev };
       if (!newData[selectedClassId]) return prev;
@@ -116,11 +119,12 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
           ...newData[selectedClassId],
           students: updatedStudents
         };
-        
-        // Salva silenciosamente (sem bloquear UI)
       }
       return newData;
     });
+
+    // Pequeno delay para o feedback visual de salvamento
+    setTimeout(() => setIsSaving(false), 800);
   };
 
   const handleManualSave = async () => {
@@ -263,6 +267,14 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
             <h3 className="text-4xl font-black text-slate-800">6º ANO</h3>
             <p className="text-slate-500 mt-2 font-bold">4 Turmas</p>
           </div>
+          <div 
+            onClick={() => setSelectedGrade('7')}
+            className="glass-panel h-64 flex flex-col items-center justify-center cursor-pointer hover:bg-white/90 transition-all transform hover:scale-[1.02] group"
+          >
+            <div className="text-8xl mb-4 group-hover:scale-110 transition-transform">7️⃣</div>
+            <h3 className="text-4xl font-black text-slate-800">7º ANO</h3>
+            <p className="text-slate-500 mt-2 font-bold">6 Turmas</p>
+          </div>
         </div>
       </div>
     );
@@ -288,13 +300,89 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
             <h4 className="text-slate-800 font-black uppercase tracking-tight mb-3 flex items-center px-2">
               <span className="mr-2">📅</span> Quadro de Horários
             </h4>
-            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-100">
-              <img 
-                src="/quadro.jpg" 
-                alt="Quadro de Horários"
-                className="w-full h-full object-contain"
-                referrerPolicy="no-referrer"
-              />
+            <div className="relative w-full overflow-x-auto rounded-xl bg-white p-2">
+              <table className="w-full border-collapse text-[10px] sm:text-xs">
+                <thead>
+                  <tr className="bg-slate-800 text-white">
+                    <th className="border border-slate-200 p-2">Hora</th>
+                    <th className="border border-slate-200 p-2">Segunda</th>
+                    <th className="border border-slate-200 p-2">Terça</th>
+                    <th className="border border-slate-200 p-2">Quarta</th>
+                    <th className="border border-slate-200 p-2">Quinta</th>
+                    <th className="border border-slate-200 p-2">Sexta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-slate-200 p-2 font-bold bg-slate-50">08h-09h</td>
+                    <td className="border border-slate-200 p-2 bg-green-100 text-green-800 font-bold text-center">T602</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td rowSpan={5} className="border border-slate-200 p-2 bg-slate-100 text-slate-500 font-black text-center align-middle uppercase tracking-widest [writing-mode:vertical-lr] rotate-180">Dia inteiro de Planejamento</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 bg-blue-100 text-blue-800 font-bold text-center">T604</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-200 p-2 font-bold bg-slate-50">09h-10h</td>
+                    <td className="border border-slate-200 p-2 bg-yellow-100 text-yellow-800 font-bold text-center">T603</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 bg-yellow-100 text-yellow-800 font-bold text-center">T603</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-200 p-2 font-bold bg-slate-50">10h-11h</td>
+                    <td className="border border-slate-200 p-2 bg-blue-100 text-blue-800 font-bold text-center">T604</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 bg-yellow-100 text-yellow-800 font-bold text-center">T603</td>
+                    <td className="border border-slate-200 p-2 bg-pink-100 text-pink-800 font-bold text-center">T601</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-200 p-2 font-bold bg-slate-50">11h-12h</td>
+                    <td className="border border-slate-200 p-2 bg-green-100 text-green-800 font-bold text-center">T602</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 bg-pink-100 text-pink-800 font-bold text-center">T601</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-200 p-2 font-bold bg-slate-50">16h-16h50</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 bg-purple-100 text-purple-800 font-bold text-center">T711</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                    <td className="border border-slate-200 p-2 text-center">Vazio</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="mt-4 grid grid-cols-2 gap-4 px-2">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                  <span>⏰</span> Dias de Aula
+                </p>
+                <p className="text-sm font-black text-slate-700">Segunda, Quinta e Sexta-feira</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                  <span>📅</span> Carga Horária
+                </p>
+                <p className="text-sm font-black text-slate-700">Aulas divididas por turmas do 6º Ano conforme grade escolar.</p>
+              </div>
+            </div>
+
+            <div className="mt-6 px-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Galeria de Fotos</p>
+              <div className="flex gap-2">
+                <div className="w-16 h-16 rounded-lg bg-slate-800 overflow-hidden border border-white/10 shadow-sm">
+                   <img src="https://images.unsplash.com/photo-1580541832626-2a7131ee809f?q=80&w=100&h=100&auto=format&fit=crop" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
+                </div>
+                <div className="w-16 h-16 rounded-lg bg-slate-800 overflow-hidden border border-white/10 shadow-sm">
+                   <img src="https://images.unsplash.com/photo-1528819622765-d6bcf132f793?q=80&w=100&h=100&auto=format&fit=crop" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center px-2">
+              <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Clube do Xadrez</span>
+              <span className="text-[10px] font-bold text-slate-500">(21) 98765-4321</span>
             </div>
           </div>
 
@@ -341,7 +429,20 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           </button>
           <div className="ml-3 flex flex-col">
-             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Data da Chamada</p>
+             <div className="flex items-center gap-2">
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-0.5">Data da Chamada</p>
+               {isSaving ? (
+                 <span className="flex items-center text-[9px] font-bold text-amber-600 animate-pulse">
+                   <svg className="animate-spin h-2 w-2 mr-1" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                   SALVANDO...
+                 </span>
+               ) : (
+                 <span className="flex items-center text-[9px] font-bold text-green-600">
+                   <svg className="w-2 h-2 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                   SALVO
+                 </span>
+               )}
+             </div>
              <input 
                type="date" 
                value={selectedDate}
@@ -378,7 +479,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
              id="save-cloud-btn"
              onClick={handleManualSave}
              disabled={isSaving}
-             className="px-3 py-2 flex items-center justify-center bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-indigo-700 transition disabled:opacity-70 disabled:cursor-wait"
+             className="px-4 py-2 flex items-center justify-center bg-green-600 text-white text-xs font-bold rounded-lg shadow-lg hover:bg-green-700 transition-all transform active:scale-95 disabled:opacity-70 disabled:cursor-wait"
              title="Salvar na Nuvem"
            >
               {isSaving ? (
